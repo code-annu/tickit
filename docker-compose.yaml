@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: tickit-db
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "${POSTGRES_PORT}:5432"
+
+    volumes:
+      - tickit_postgres_data:/var/lib/tickit_postgres
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tickit-db-admin
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+
+      # Makes pgAdmin easier for local development
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+
+    ports:
+      - "${PGADMIN_PORT}:80"
+
+    volumes:
+      - tickit_pgadmin_data:/var/lib/tickit_pgadmin
+
+    depends_on:
+      - postgres
+
+volumes:
+  tickit_postgres_data:
+  tickit_pgadmin_data:
