@@ -1,6 +1,6 @@
 import { ClientInfoType } from "@/shared/util/client-info.util";
 
-export interface RefreshTokenDto {
-  token: string;
+export interface RefreshSessionDto {
+  token?: string | null;
   client: ClientInfoType;
 }

@@ -10,7 +10,7 @@ import JWTUtil from "@/shared/util/jwt.util";
 import UnauthorizedError from "@/shared/error/types/UnAuthorizedError";
 import AuthErrorCode from "./AuthErrorCode";
 import { LoginDto } from "./dto/login.dto";
-import { RefreshTokenDto } from "./dto/refresh-token.dto";
+import { RefreshSessionDto } from "./dto/refresh-session.dto";
 
 @injectable()
 export default class AuthService {
@@ -54,9 +54,17 @@ export default class AuthService {
     return newSession;
   }
 
-  async refreshSession(input: RefreshTokenDto): Promise<Session> {
-    const tokenHash = this.jwtUtil.hashToken(input.token);
-    const session = await this.sessionRepo.findByTokenHash(tokenHash); 
+  async refreshSession(input: RefreshSessionDto): Promise<Session> {
+    const token = input.token;
+    if (!token) {
+      throw new UnauthorizedError(
+        "Refresh token is missing",
+        AuthErrorCode.MISSING_REFRESH_TOKEN,
+      );
+    }
+
+    const tokenHash = this.jwtUtil.hashToken(token);
+    const session = await this.sessionRepo.findByTokenHash(tokenHash);
     if (!session) {
       throw new UnauthorizedError(
         "Refresh token is invalid",
