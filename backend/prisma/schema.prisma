@@ -22,7 +22,8 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  session Session?
+  session  Session?
+  profiles Profile?
 
   @@index([email])
   @@map("users")
@@ -49,4 +50,27 @@ model Session {
 
   @@index([userId, refreshTokenHash])
   @@map("sessions")
+}
+
+model Profile {
+  id String @id @db.Uuid
+
+  fullname  String    @map("full_name")
+  dob       DateTime? @db.Date
+  gender    Gender
+  avatarUrl String?   @map("avatar_url")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@index([fullname])
+  @@map("profiles")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }

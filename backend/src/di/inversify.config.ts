@@ -8,6 +8,11 @@ import UserRepository from "@/shared/user/repository/user.repository";
 import UserService from "@/shared/user/user.service";
 import ClientInfoUtil from "@/shared/util/client-info.util";
 import JWTUtil from "@/shared/util/jwt.util";
+import ProfileRepository from "@/modules/profile/repository/profile.repository";
+import ProfileService from "@/modules/profile/profile.service";
+import ProfileController from "@/modules/profile/api/profile.controller";
+import ProfileRouter from "@/modules/profile/api/profile.router";
+import ProfileMapper from "@/modules/profile/mapper/profile.mapper";
 
 const container = new Container();
 
@@ -27,5 +32,18 @@ container
 container.bind(TYPES.AuthService).to(AuthService).inSingletonScope();
 container.bind(TYPES.AuthController).to(AuthController).inSingletonScope();
 container.bind(TYPES.AuthRouter).to(AuthRouter).inSingletonScope();
+
+// Profile Module
+container
+  .bind(TYPES.ProfileRepository)
+  .to(ProfileRepository)
+  .inSingletonScope();
+container.bind(TYPES.ProfileService).to(ProfileService).inSingletonScope();
+container
+  .bind(TYPES.ProfileController)
+  .to(ProfileController)
+  .inSingletonScope();
+container.bind(TYPES.ProfileRouter).to(ProfileRouter).inSingletonScope();
+container.bind(TYPES.ProfileMapper).to(ProfileMapper).inSingletonScope();
 
 export default container;
