@@ -8,7 +8,10 @@ interface AuthUser {
 }
 
 export default abstract class AuthHelper {
-  static async getAuthenticatedUser() {
+  static async getAuthenticatedUser(): Promise<{
+    authUser: AuthUser;
+    cookies: any;
+  }> {
     await UserFactory.createUser("peter@gmail.com", "Peter@1234");
     const response = await request(app)
       .post("/api/auth/login")
