@@ -9,10 +9,10 @@ export default class TheaterStreamingService {
     private readonly theaterStreamingRepo: TheaterStreamingRepository,
   ) {}
 
-  async getStreamingTheatersForMovieInCity(
+  async getTheatersForMovieInCity(
     movieId: string,
     options: { city: string; date: Date },
   ) {
-    return this.theaterStreamingRepo.findStreamingOf(movieId, options);
+    return this.theaterStreamingRepo.findStreamingFor(movieId, options);
   }
 }

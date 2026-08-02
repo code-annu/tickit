@@ -12,7 +12,7 @@ export default class TheaterStreamingRepository {
     private readonly db = prisma,
   ) {}
 
-  async findStreamingOf(
+  async findStreamingFor(
     movieId: string,
     options: { city: string; date: Date },
   ): Promise<TheaterStreaming[]> {
