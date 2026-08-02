@@ -1,0 +1,282 @@
+[
+  {
+    "name": "PVR Superplex Mall of India",
+    "city": "Noida",
+    "address": "Mall of India, Sector 18, Noida, Uttar Pradesh 201301",
+    "avatarUrl": "https://picsum.photos/seed/theater-noida-1/600/400",
+    "rating": 4.8,
+    "seatingCapacity": 168
+  },
+  {
+    "name": "Cinepolis DLF Mall of India",
+    "city": "Noida",
+    "address": "DLF Mall of India, Sector 18, Noida, Uttar Pradesh 201301",
+    "avatarUrl": "https://picsum.photos/seed/theater-noida-2/600/400",
+    "rating": 4.6,
+    "seatingCapacity": 142
+  },
+  {
+    "name": "Wave Cinemas",
+    "city": "Noida",
+    "address": "Wave Mall, Sector 18, Noida, Uttar Pradesh 201301",
+    "avatarUrl": "https://picsum.photos/seed/theater-noida-3/600/400",
+    "rating": 4.4,
+    "seatingCapacity": 155
+  },
+  {
+    "name": "INOX Gardens Galleria",
+    "city": "Noida",
+    "address": "Gardens Galleria Mall, Sector 38A, Noida",
+    "avatarUrl": "https://picsum.photos/seed/theater-noida-4/600/400",
+    "rating": 4.5,
+    "seatingCapacity": 134
+  },
+  {
+    "name": "MovieMax Spectrum Metro",
+    "city": "Noida",
+    "address": "Spectrum Metro Mall, Sector 75, Noida",
+    "avatarUrl": "https://picsum.photos/seed/theater-noida-5/600/400",
+    "rating": 4.2,
+    "seatingCapacity": 121
+  },
+  {
+    "name": "Miraj Cinemas Gaur City",
+    "city": "Noida",
+    "address": "Gaur City Mall, Greater Noida West",
+    "avatarUrl": "https://picsum.photos/seed/theater-noida-6/600/400",
+    "rating": 4.3,
+    "seatingCapacity": 179
+  },
+  {
+    "name": "Carnival Cinemas Sector 62",
+    "city": "Noida",
+    "address": "Sector 62, Noida",
+    "avatarUrl": "https://picsum.photos/seed/theater-noida-7/600/400",
+    "rating": 4.0,
+    "seatingCapacity": 196
+  },
+  {
+    "name": "PVR Plaza Connaught Place",
+    "city": "Delhi",
+    "address": "Connaught Place, New Delhi",
+    "avatarUrl": "https://picsum.photos/seed/theater-delhi-1/600/400",
+    "rating": 4.7,
+    "seatingCapacity": 165
+  },
+  {
+    "name": "INOX Nehru Place",
+    "city": "Delhi",
+    "address": "Nehru Place, New Delhi",
+    "avatarUrl": "https://picsum.photos/seed/theater-delhi-2/600/400",
+    "rating": 4.5,
+    "seatingCapacity": 148
+  },
+  {
+    "name": "Cinepolis DLF Avenue Saket",
+    "city": "Delhi",
+    "address": "DLF Avenue, Saket, New Delhi",
+    "avatarUrl": "https://picsum.photos/seed/theater-delhi-3/600/400",
+    "rating": 4.8,
+    "seatingCapacity": 139
+  },
+  {
+    "name": "MovieTime Rajouri Garden",
+    "city": "Delhi",
+    "address": "Rajouri Garden, New Delhi",
+    "avatarUrl": "https://picsum.photos/seed/theater-delhi-4/600/400",
+    "rating": 4.2,
+    "seatingCapacity": 118
+  },
+  {
+    "name": "Miraj Cinemas Rohini",
+    "city": "Delhi",
+    "address": "Rohini, New Delhi",
+    "avatarUrl": "https://picsum.photos/seed/theater-delhi-5/600/400",
+    "rating": 4.1,
+    "seatingCapacity": 184
+  },
+  {
+    "name": "PVR Pacific Subhash Nagar",
+    "city": "Delhi",
+    "address": "Pacific Mall, Subhash Nagar, New Delhi",
+    "avatarUrl": "https://picsum.photos/seed/theater-delhi-6/600/400",
+    "rating": 4.6,
+    "seatingCapacity": 192
+  },
+  {
+    "name": "Delite Cinema",
+    "city": "Delhi",
+    "address": "Asaf Ali Road, New Delhi",
+    "avatarUrl": "https://picsum.photos/seed/theater-delhi-7/600/400",
+    "rating": 4.3,
+    "seatingCapacity": 171
+  },
+  {
+    "name": "PVR Phoenix Lower Parel",
+    "city": "Mumbai",
+    "address": "Phoenix Palladium, Lower Parel, Mumbai",
+    "avatarUrl": "https://picsum.photos/seed/theater-mumbai-1/600/400",
+    "rating": 4.8,
+    "seatingCapacity": 198
+  },
+  {
+    "name": "INOX Megaplex Malad",
+    "city": "Mumbai",
+    "address": "Inorbit Mall, Malad West, Mumbai",
+    "avatarUrl": "https://picsum.photos/seed/theater-mumbai-2/600/400",
+    "rating": 4.9,
+    "seatingCapacity": 187
+  },
+  {
+    "name": "Cinepolis Andheri",
+    "city": "Mumbai",
+    "address": "Andheri West, Mumbai",
+    "avatarUrl": "https://picsum.photos/seed/theater-mumbai-3/600/400",
+    "rating": 4.6,
+    "seatingCapacity": 163
+  },
+  {
+    "name": "MovieMax Sion",
+    "city": "Mumbai",
+    "address": "Sion Circle, Mumbai",
+    "avatarUrl": "https://picsum.photos/seed/theater-mumbai-4/600/400",
+    "rating": 4.2,
+    "seatingCapacity": 144
+  },
+  {
+    "name": "Miraj Cinemas Wadala",
+    "city": "Mumbai",
+    "address": "Wadala, Mumbai",
+    "avatarUrl": "https://picsum.photos/seed/theater-mumbai-5/600/400",
+    "rating": 4.1,
+    "seatingCapacity": 151
+  },
+  {
+    "name": "Mukta A2 New Excelsior",
+    "city": "Mumbai",
+    "address": "Fort, Mumbai",
+    "avatarUrl": "https://picsum.photos/seed/theater-mumbai-6/600/400",
+    "rating": 4.5,
+    "seatingCapacity": 173
+  },
+  {
+    "name": "Gold Cinema Borivali",
+    "city": "Mumbai",
+    "address": "Borivali West, Mumbai",
+    "avatarUrl": "https://picsum.photos/seed/theater-mumbai-7/600/400",
+    "rating": 4.0,
+    "seatingCapacity": 127
+  },
+  {
+    "name": "PVR Orion Mall",
+    "city": "Bengaluru",
+    "address": "Orion Mall, Rajajinagar, Bengaluru",
+    "avatarUrl": "https://picsum.photos/seed/theater-blr-1/600/400",
+    "rating": 4.8,
+    "seatingCapacity": 158
+  },
+  {
+    "name": "INOX Garuda Mall",
+    "city": "Bengaluru",
+    "address": "Garuda Mall, Magrath Road, Bengaluru",
+    "avatarUrl": "https://picsum.photos/seed/theater-blr-2/600/400",
+    "rating": 4.6,
+    "seatingCapacity": 132
+  },
+  {
+    "name": "Cinepolis ETA Mall",
+    "city": "Bengaluru",
+    "address": "ETA Mall, Magadi Road, Bengaluru",
+    "avatarUrl": "https://picsum.photos/seed/theater-blr-3/600/400",
+    "rating": 4.4,
+    "seatingCapacity": 116
+  },
+  {
+    "name": "PVR Vega City",
+    "city": "Bengaluru",
+    "address": "Vega City Mall, Bannerghatta Road",
+    "avatarUrl": "https://picsum.photos/seed/theater-blr-4/600/400",
+    "rating": 4.7,
+    "seatingCapacity": 176
+  },
+  {
+    "name": "Miraj Cinemas Yelahanka",
+    "city": "Bengaluru",
+    "address": "Yelahanka, Bengaluru",
+    "avatarUrl": "https://picsum.photos/seed/theater-blr-5/600/400",
+    "rating": 4.2,
+    "seatingCapacity": 123
+  },
+  {
+    "name": "MovieTime Whitefield",
+    "city": "Bengaluru",
+    "address": "Whitefield, Bengaluru",
+    "avatarUrl": "https://picsum.photos/seed/theater-blr-6/600/400",
+    "rating": 4.3,
+    "seatingCapacity": 141
+  },
+  {
+    "name": "PVR Forum South Bengaluru",
+    "city": "Bengaluru",
+    "address": "Forum South Mall, Kanakapura Road",
+    "avatarUrl": "https://picsum.photos/seed/theater-blr-7/600/400",
+    "rating": 4.6,
+    "seatingCapacity": 169
+  },
+  {
+    "name": "Wave Cinemas Ghaziabad",
+    "city": "Ghaziabad",
+    "address": "Wave Mall, Kaushambi, Ghaziabad",
+    "avatarUrl": "https://picsum.photos/seed/theater-gzb-1/600/400",
+    "rating": 4.4,
+    "seatingCapacity": 133
+  },
+  {
+    "name": "PVR Opulent Mall",
+    "city": "Ghaziabad",
+    "address": "Opulent Mall, Ghaziabad",
+    "avatarUrl": "https://picsum.photos/seed/theater-gzb-2/600/400",
+    "rating": 4.5,
+    "seatingCapacity": 182
+  },
+  {
+    "name": "Cinepolis Gaur Central",
+    "city": "Ghaziabad",
+    "address": "Gaur Central Mall, Ghaziabad",
+    "avatarUrl": "https://picsum.photos/seed/theater-gzb-3/600/400",
+    "rating": 4.3,
+    "seatingCapacity": 149
+  },
+  {
+    "name": "Miraj Cinemas RDC",
+    "city": "Ghaziabad",
+    "address": "Raj Nagar District Centre, Ghaziabad",
+    "avatarUrl": "https://picsum.photos/seed/theater-gzb-4/600/400",
+    "rating": 4.1,
+    "seatingCapacity": 117
+  },
+  {
+    "name": "MovieMax Indirapuram",
+    "city": "Ghaziabad",
+    "address": "Indirapuram Habitat Centre, Ghaziabad",
+    "avatarUrl": "https://picsum.photos/seed/theater-gzb-5/600/400",
+    "rating": 4.2,
+    "seatingCapacity": 154
+  },
+  {
+    "name": "Gold Cinema Vasundhara",
+    "city": "Ghaziabad",
+    "address": "Vasundhara, Ghaziabad",
+    "avatarUrl": "https://picsum.photos/seed/theater-gzb-6/600/400",
+    "rating": 4.0,
+    "seatingCapacity": 138
+  },
+  {
+    "name": "Carnival Cinemas Crossings",
+    "city": "Ghaziabad",
+    "address": "Crossings Republik, Ghaziabad",
+    "avatarUrl": "https://picsum.photos/seed/theater-gzb-7/600/400",
+    "rating": 4.1,
+    "seatingCapacity": 191
+  }
+]
