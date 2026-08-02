@@ -22,8 +22,10 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  session  Session?
-  profiles Profile?
+  session             Session?
+  profiles            Profile?
+  paymentTransactions PaymentTransaction[]
+  movieBookings       MovieBooking[]
 
   @@index([email])
   @@map("users")
@@ -69,8 +71,163 @@ model Profile {
   @@map("profiles")
 }
 
+model Movie {
+  id           String   @id @default(uuid()) @db.Uuid
+  title        String
+  posterUrl    String   @map("poster_url")
+  releasedDate DateTime @map("released_date") @db.Date
+  overview     String   @db.Text
+  language     String
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  theaterStreamings StreamingTheater[]
+
+  @@index([title])
+  @@index([language])
+  @@index([releasedDate])
+  @@map("movies")
+}
+
+model Theater {
+  id              String @id @default(uuid()) @db.Uuid
+  name            String
+  city            String
+  address         String @db.Text
+  avatarUrl       String @map("avatar_url")
+  rating          Float  @default(0) @db.DoublePrecision
+  seatingCapacity Int    @map("seating_capacity")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  theaterStreamings StreamingTheater[]
+  theaterSeats      TheaterSeat[]
+
+  @@index([city])
+  @@index([name])
+  @@map("theaters")
+}
+
+model TheaterSeat {
+  id         String   @id @default(uuid()) @db.Uuid
+  theaterId  String   @map("theater_id") @db.Uuid
+  seatNumber String   @map("seat_number")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  theater                Theater                @relation(fields: [theaterId], references: [id], onDelete: Cascade)
+  theaterSeatInventories TheaterSeatInventory[]
+
+  @@unique([theaterId, seatNumber])
+  @@index([theaterId])
+  @@map("theater_seats")
+}
+
+model StreamingTheater {
+  id            String   @id @default(uuid()) @db.Uuid
+  movieId       String   @map("movie_id") @db.Uuid
+  theaterId     String   @map("theater_id") @db.Uuid
+  onDate        DateTime @map("on_date") @db.Date
+  startTime     DateTime @map("start_time") @db.Time(0)
+  endTime       DateTime @map("end_time") @db.Time(0)
+  duration      Int
+  onwardsAmount Decimal  @map("onwards_amount") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  movie                  Movie                  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  theater                Theater                @relation(fields: [theaterId], references: [id], onDelete: Cascade)
+  theaterSeatInventories TheaterSeatInventory[]
+
+  @@unique([theaterId, onDate, startTime])
+  @@index([movieId])
+  @@index([theaterId])
+  @@index([onDate])
+  @@map("streaming_theaters")
+}
+
+model TheaterSeatInventory {
+  id          String     @id @default(uuid()) @db.Uuid
+  seatId      String     @map("seat_id") @db.Uuid
+  streamingId String     @map("streaming_id") @db.Uuid
+  status      SeatStatus @default(AVAILABLE)
+  price       Decimal    @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  seat          TheaterSeat      @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  streaming     StreamingTheater @relation(fields: [streamingId], references: [id], onDelete: Cascade)
+  movieBookings MovieBooking[]
+
+  @@unique([streamingId, seatId])
+  @@index([streamingId])
+  @@index([seatId])
+  @@index([status])
+  @@map("theater_seat_inventory")
+}
+
+model PaymentTransaction {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  status      PaymentStatus
+  totalAmount Decimal       @map("total_amount") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movieBookings MovieBooking[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("payment_transactions")
+}
+
+model MovieBooking {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  seatInventoryId String        @map("seat_inventory_id") @db.Uuid
+  status          BookingStatus
+  transactionId   String        @map("transaction_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seatInventory      TheaterSeatInventory @relation(fields: [seatInventoryId], references: [id], onDelete: Cascade)
+  paymentTransaction PaymentTransaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([seatInventoryId])
+  @@index([transactionId])
+  @@index([status])
+  @@map("movie_bookings")
+}
+
 enum Gender {
   MALE
   FEMALE
   OTHER
+}
+
+enum SeatStatus {
+  BOOKED
+  HELD
+  AVAILABLE
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  REFUNDED
+  FAILED
+}
+
+enum BookingStatus {
+  FAILED
+  SUCCESS
 }

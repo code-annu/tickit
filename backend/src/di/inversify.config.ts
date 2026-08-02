@@ -13,6 +13,15 @@ import ProfileService from "@/modules/profile/profile.service";
 import ProfileController from "@/modules/profile/api/profile.controller";
 import ProfileRouter from "@/modules/profile/api/profile.router";
 import ProfileMapper from "@/modules/profile/mapper/profile.mapper";
+import MovieRepository from "@/modules/movie_booking/repository/movie.repository";
+import MovieService from "@/modules/movie_booking/service/movie.service";
+import TheaterRepository from "@/modules/movie_booking/repository/theater.repository";
+import TheaterService from "@/modules/movie_booking/service/theater.service";
+import MovieBookingController from "@/modules/movie_booking/api/movie-booking.controller";
+import MovieBookingRouter from "@/modules/movie_booking/api/movie-booking.router";
+import TheaterStreamingService from "@/modules/movie_booking/service/theater-streaming.service";
+import TheaterStreamingRepository from "@/modules/movie_booking/repository/theater-streaming.repository";
+import TheaterStreamingMapper from "@/modules/movie_booking/mapper/theater-streaming.mapper";
 
 const container = new Container();
 
@@ -45,5 +54,34 @@ container
   .inSingletonScope();
 container.bind(TYPES.ProfileRouter).to(ProfileRouter).inSingletonScope();
 container.bind(TYPES.ProfileMapper).to(ProfileMapper).inSingletonScope();
+
+// Movie Booking Module
+container.bind(TYPES.MovieRepository).to(MovieRepository).inSingletonScope();
+container.bind(TYPES.MovieService).to(MovieService).inSingletonScope();
+container
+  .bind(TYPES.TheaterRepository)
+  .to(TheaterRepository)
+  .inSingletonScope();
+container.bind(TYPES.TheaterService).to(TheaterService).inSingletonScope();
+container
+  .bind(TYPES.MovieBookingController)
+  .to(MovieBookingController)
+  .inSingletonScope();
+container
+  .bind(TYPES.MovieBookingRouter)
+  .to(MovieBookingRouter)
+  .inSingletonScope();
+container
+  .bind(TYPES.TheaterStreamingService)
+  .to(TheaterStreamingService)
+  .inSingletonScope();
+container
+  .bind(TYPES.TheaterStreamingRepository)
+  .to(TheaterStreamingRepository)
+  .inSingletonScope();
+container
+  .bind(TYPES.TheaterStreamingMapper)
+  .to(TheaterStreamingMapper)
+  .inSingletonScope();
 
 export default container;

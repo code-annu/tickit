@@ -19,6 +19,17 @@ const TYPES = {
   ProfileService: Symbol.for("ProfileService"),
   ProfileController: Symbol.for("ProfileController"),
   ProfileRouter: Symbol.for("ProfileRouter"),
+
+  // Movie Booking types
+  MovieRepository: Symbol.for("MovieRepository"),
+  MovieService: Symbol.for("MovieService"),
+  TheaterRepository: Symbol.for("TheaterRepository"),
+  TheaterService: Symbol.for("TheaterService"),
+  MovieBookingController: Symbol.for("MovieBookingController"),
+  MovieBookingRouter: Symbol.for("MovieBookingRouter"),
+  TheaterStreamingRepository: Symbol.for("TheaterStreamingRepository"),
+  TheaterStreamingService: Symbol.for("TheaterStreamingService"),
+  TheaterStreamingMapper: Symbol.for("TheaterStreamingMapper"),
 };
 
 export default TYPES;

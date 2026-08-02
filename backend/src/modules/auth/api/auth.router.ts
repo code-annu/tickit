@@ -1,4 +1,4 @@
-import { validateRequestBody } from "@/shared/middleware/validate-request-body.middleware";
+import { validateRequest } from "@/shared/middleware/validate-request.middleware";
 import { Router } from "express";
 import { inject, injectable } from "inversify";
 import { signupSchema } from "../schema/signup.schema";
@@ -21,12 +21,12 @@ export default class AuthRouter {
   private setupRoutes() {
     this.router.post(
       "/signup",
-      validateRequestBody(signupSchema),
+      validateRequest({ body: signupSchema }),
       this.authController.postSignup,
     );
     this.router.post(
       "/login/",
-      validateRequestBody(loginSchema),
+      validateRequest({ body: loginSchema }),
       this.authController.postLogin,
     );
 

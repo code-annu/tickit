@@ -7,7 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
     "build": "tsc && tsc-alias",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed:movies": "tsx test/seeds/movie.seed.ts",
+    "seed:theaters": "tsx test/seeds/theater.seed.ts",
+    "seed:theater-seats": "tsx test/seeds/theater-seat.seed.ts",
+    "seed:theater-streamings": "tsx test/seeds/theater-streaming.seed.ts",
+    "seed:theater-seat-inventory": "tsx test/seeds/theater-seat-inventory.seed.ts",
+    "seed:all": "npm run seed:movies && npm run seed:theaters && npm run seed:theater-seats && npm run seed:theater-streamings && npm run seed:theater-seat-inventory"
   },
   "keywords": [],
   "author": "",

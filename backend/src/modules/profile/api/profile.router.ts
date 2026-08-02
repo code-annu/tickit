@@ -1,4 +1,4 @@
-import { validateRequestBody } from "@/shared/middleware/validate-request-body.middleware";
+import { validateRequest } from "@/shared/middleware/validate-request.middleware";
 import { Router } from "express";
 import { inject, injectable } from "inversify";
 import TYPES from "@/di/inversify.types";
@@ -22,20 +22,16 @@ export default class ProfileRouter {
     this.router.post(
       "/",
       authenticateUser,
-      validateRequestBody(profileCreateSchema),
+      validateRequest({ body: profileCreateSchema }),
       this.profileController.postProfile,
     );
 
-    this.router.get(
-      "/",
-      authenticateUser,
-      this.profileController.getProfile,
-    );
+    this.router.get("/", authenticateUser, this.profileController.getProfile);
 
     this.router.patch(
       "/",
       authenticateUser,
-      validateRequestBody(profileUpdateSchema),
+      validateRequest({ body: profileUpdateSchema }),
       this.profileController.patchProfile,
     );
 
