@@ -1,7 +1,7 @@
 import TYPES from "@/di/inversify.types";
 import { inject, injectable } from "inversify";
 import MovieService from "../service/movie.service";
-import TheaterStreamingService from "../service/theater-streaming.service";
+import StreamingTheaterService from "../service/streaming-theater.service";
 import catchAsync from "@/shared/error/async.catch";
 import { NextFunction, Request, Response } from "express";
 import {
@@ -14,8 +14,8 @@ import { buildStreamingTheatersForMovieResponse } from "./response/theater-strea
 export default class MovieBookingController {
   constructor(
     @inject(TYPES.MovieService) private readonly movieService: MovieService,
-    @inject(TYPES.TheaterStreamingService)
-    private readonly theaterStreamingService: TheaterStreamingService,
+    @inject(TYPES.StreamingTheaterService)
+    private readonly streamingTheaterService: StreamingTheaterService,
   ) {}
 
   getStreamingMovies = catchAsync(
@@ -48,7 +48,7 @@ export default class MovieBookingController {
       const { city, date } = req.query;
       const movie = await this.movieService.getMovieById(movieId!.toString());
       const streamingTheaters =
-        await this.theaterStreamingService.getTheatersForMovieInCity(
+        await this.streamingTheaterService.getTheatersForMovie(
           movieId!.toString(),
           { city: city!.toString(), date: new Date(date!.toString()) },
         );

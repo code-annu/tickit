@@ -1,17 +1,17 @@
-import TheaterStreamingService from "../service/theater-streaming.service";
-import { TheaterStreaming } from "../entity/theater-streaming.entity";
+import StreamingTheaterService from "../service/streaming-theater.service";
+import { StreamingTheater } from "../entity/streaming-theater.entity";
 
 const theaterStreamingRepo = {
   findStreamingFor: vi.fn(),
 };
 
-const theaterStreamingService = new TheaterStreamingService(
+const theaterStreamingService = new StreamingTheaterService(
   theaterStreamingRepo as any,
 );
 
 const now = new Date();
 
-const streaming: TheaterStreaming = {
+const streaming: StreamingTheater = {
   id: "streaming-1",
   theater: {
     id: "theater-1",
@@ -38,7 +38,7 @@ describe("Get theaters for movie in city", () => {
   });
 
   it("Should return streaming theaters for a movie", async () => {
-    const streamings: TheaterStreaming[] = [
+    const streamings: StreamingTheater[] = [
       streaming,
       {
         ...streaming,
@@ -49,7 +49,7 @@ describe("Get theaters for movie in city", () => {
     ];
     theaterStreamingRepo.findStreamingFor.mockResolvedValue(streamings);
 
-    const result = await theaterStreamingService.getTheatersForMovieInCity(
+    const result = await theaterStreamingService.getTheatersForMovie(
       "movie-1",
       { city: "Mumbai", date: new Date("2026-08-10") },
     );
@@ -64,7 +64,7 @@ describe("Get theaters for movie in city", () => {
   it("Should return empty list when no streamings exist", async () => {
     theaterStreamingRepo.findStreamingFor.mockResolvedValue([]);
 
-    const result = await theaterStreamingService.getTheatersForMovieInCity(
+    const result = await theaterStreamingService.getTheatersForMovie(
       "movie-1",
       { city: "Delhi", date: new Date("2026-08-10") },
     );
@@ -79,7 +79,7 @@ describe("Get theaters for movie in city", () => {
   it("Should call repository exactly once", async () => {
     theaterStreamingRepo.findStreamingFor.mockResolvedValue([streaming]);
 
-    await theaterStreamingService.getTheatersForMovieInCity("movie-1", {
+    await theaterStreamingService.getTheatersForMovie("movie-1", {
       city: "Mumbai",
       date: new Date("2026-08-10"),
     });
@@ -93,7 +93,7 @@ describe("Get theaters for movie in city", () => {
     );
 
     await expect(
-      theaterStreamingService.getTheatersForMovieInCity("movie-1", {
+      theaterStreamingService.getTheatersForMovie("movie-1", {
         city: "Mumbai",
         date: new Date("2026-08-10"),
       }),

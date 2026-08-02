@@ -19,9 +19,9 @@ import TheaterRepository from "@/modules/movie_booking/repository/theater.reposi
 import TheaterService from "@/modules/movie_booking/service/theater.service";
 import MovieBookingController from "@/modules/movie_booking/api/movie-booking.controller";
 import MovieBookingRouter from "@/modules/movie_booking/api/movie-booking.router";
-import TheaterStreamingService from "@/modules/movie_booking/service/theater-streaming.service";
-import TheaterStreamingRepository from "@/modules/movie_booking/repository/theater-streaming.repository";
-import TheaterStreamingMapper from "@/modules/movie_booking/mapper/theater-streaming.mapper";
+import StreamingTheaterService from "@/modules/movie_booking/service/streaming-theater.service";
+import StreamingTheaterRepository from "@/modules/movie_booking/repository/streaming-theater.repository";
+import TheaterStreamingMapper from "@/modules/movie_booking/mapper/streaming-theater.mapper";
 
 const container = new Container();
 
@@ -72,15 +72,15 @@ container
   .to(MovieBookingRouter)
   .inSingletonScope();
 container
-  .bind(TYPES.TheaterStreamingService)
-  .to(TheaterStreamingService)
+  .bind(TYPES.StreamingTheaterService)
+  .to(StreamingTheaterService)
   .inSingletonScope();
 container
-  .bind(TYPES.TheaterStreamingRepository)
-  .to(TheaterStreamingRepository)
+  .bind(TYPES.StreamingTheaterRepository)
+  .to(StreamingTheaterRepository)
   .inSingletonScope();
 container
-  .bind(TYPES.TheaterStreamingMapper)
+  .bind(TYPES.StreamingTheaterMapper)
   .to(TheaterStreamingMapper)
   .inSingletonScope();
 

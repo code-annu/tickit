@@ -1,18 +1,17 @@
 import { injectable } from "inversify";
 import {
-  TheaterStreaming as PrismaTheaterStreaming,
-  Movie as PrismaMovie,
+  StreamingTheater as PrismaStreamingTheater,
   Theater as PrismaTheater,
 } from "@/generated/prisma/client";
-import { TheaterStreaming } from "../entity/theater-streaming.entity";
+import { StreamingTheater } from "../entity/streaming-theater.entity";
 
-type TheaterStreamingWithTheater = PrismaTheaterStreaming & {
+type StreamingTheaterWithTheater = PrismaStreamingTheater & {
   theater: PrismaTheater;
 };
 
 @injectable()
-export default class TheaterStreamingMapper {
-  toEntity(data: TheaterStreamingWithTheater): TheaterStreaming {
+export default class StreamingTheaterMapper {
+  toEntity(data: StreamingTheaterWithTheater): StreamingTheater {
     return {
       id: data.id,
       theater: data.theater,

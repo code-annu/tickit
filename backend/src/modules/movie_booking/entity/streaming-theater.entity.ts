@@ -1,6 +1,6 @@
 import { Theater } from "./theater.entity";
 
-export interface TheaterStreaming {
+export interface StreamingTheater {
   readonly id: string;
   readonly theater: Theater;
   readonly onDate: Date;

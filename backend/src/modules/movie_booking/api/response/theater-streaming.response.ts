@@ -1,9 +1,9 @@
 import { Movie } from "../../entity/movie.entity";
-import { TheaterStreaming } from "../../entity/theater-streaming.entity";
+import { StreamingTheater } from "../../entity/streaming-theater.entity";
 
 export function buildStreamingTheatersForMovieResponse(
   movie: Movie,
-  streamingTheaters: TheaterStreaming[],
+  streamingTheaters: StreamingTheater[],
   message: string,
 ) {
   return {
