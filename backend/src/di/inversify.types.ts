@@ -20,16 +20,20 @@ const TYPES = {
   ProfileController: Symbol.for("ProfileController"),
   ProfileRouter: Symbol.for("ProfileRouter"),
 
-  // Movie Booking types
+  // Movie types
   MovieRepository: Symbol.for("MovieRepository"),
-  MovieService: Symbol.for("MovieService"),
   TheaterRepository: Symbol.for("TheaterRepository"),
-  TheaterService: Symbol.for("TheaterService"),
-  MovieBookingController: Symbol.for("MovieBookingController"),
-  MovieBookingRouter: Symbol.for("MovieBookingRouter"),
   StreamingTheaterRepository: Symbol.for("StreamingTheaterRepository"),
-  StreamingTheaterService: Symbol.for("StreamingTheaterService"),
+  TheaterSeatInventoryRepository: Symbol.for("TheaterSeatInventoryRepository"),
   StreamingTheaterMapper: Symbol.for("StreamingTheaterMapper"),
+  TheaterSeatInventoryMapper: Symbol.for("TheaterSeatInventoryMapper"),
+  MovieListingService: Symbol.for("MovieListingService"),
+  MovieBookingService: Symbol.for("MovieBookingService"),
+  MovieBookingController: Symbol.for("MovieBookingController"),
+  MovieListingController: Symbol.for("MovieListingController"),
+  MovieBookingRouter: Symbol.for("MovieBookingRouter"),
+  MovieListingRouter: Symbol.for("MovieListingRouter"),
+  MovieRouter: Symbol.for("MovieRouter"),
 };
 
 export default TYPES;

@@ -13,15 +13,19 @@ import ProfileService from "@/modules/profile/profile.service";
 import ProfileController from "@/modules/profile/api/profile.controller";
 import ProfileRouter from "@/modules/profile/api/profile.router";
 import ProfileMapper from "@/modules/profile/mapper/profile.mapper";
-import MovieRepository from "@/modules/movie_booking/repository/movie.repository";
-import MovieService from "@/modules/movie_booking/service/movie.service";
-import TheaterRepository from "@/modules/movie_booking/repository/theater.repository";
-import TheaterService from "@/modules/movie_booking/service/theater.service";
-import MovieBookingController from "@/modules/movie_booking/api/movie-booking.controller";
-import MovieBookingRouter from "@/modules/movie_booking/api/movie-booking.router";
-import StreamingTheaterService from "@/modules/movie_booking/service/streaming-theater.service";
-import StreamingTheaterRepository from "@/modules/movie_booking/repository/streaming-theater.repository";
-import TheaterStreamingMapper from "@/modules/movie_booking/mapper/streaming-theater.mapper";
+import MovieRepository from "@/modules/movie/data/repository/movie.repository";
+import TheaterRepository from "@/modules/movie/data/repository/theater.repository";
+import StreamingTheaterRepository from "@/modules/movie/data/repository/streaming-theater.repository";
+import TheaterStreamingMapper from "@/modules/movie/data/mapper/streaming-theater.mapper";
+import MovieListingRouter from "@/modules/movie/api/router/movie-listing.router";
+import MovieListingController from "@/modules/movie/api/controller/movie-listing.controller";
+import MovieListingService from "@/modules/movie/domain/service/movie-listing.service";
+import MovieRouter from "@/modules/movie/api/router/movie.router";
+import TheaterSeatInventoryMapper from "@/modules/movie/data/mapper/theater-seat-inventory.mapper";
+import TheaterSeatInventoryRepository from "@/modules/movie/data/repository/theater-seat-inventory.repository";
+import MovieBookingService from "@/modules/movie/domain/service/movie-booking.service";
+import MovieBookingController from "@/modules/movie/api/controller/movie-booking.controller";
+import MovieBookingRouter from "@/modules/movie/api/router/movie-booking.router";
 
 const container = new Container();
 
@@ -55,25 +59,11 @@ container
 container.bind(TYPES.ProfileRouter).to(ProfileRouter).inSingletonScope();
 container.bind(TYPES.ProfileMapper).to(ProfileMapper).inSingletonScope();
 
-// Movie Booking Module
+// Movie Module
 container.bind(TYPES.MovieRepository).to(MovieRepository).inSingletonScope();
-container.bind(TYPES.MovieService).to(MovieService).inSingletonScope();
 container
   .bind(TYPES.TheaterRepository)
   .to(TheaterRepository)
-  .inSingletonScope();
-container.bind(TYPES.TheaterService).to(TheaterService).inSingletonScope();
-container
-  .bind(TYPES.MovieBookingController)
-  .to(MovieBookingController)
-  .inSingletonScope();
-container
-  .bind(TYPES.MovieBookingRouter)
-  .to(MovieBookingRouter)
-  .inSingletonScope();
-container
-  .bind(TYPES.StreamingTheaterService)
-  .to(StreamingTheaterService)
   .inSingletonScope();
 container
   .bind(TYPES.StreamingTheaterRepository)
@@ -83,5 +73,39 @@ container
   .bind(TYPES.StreamingTheaterMapper)
   .to(TheaterStreamingMapper)
   .inSingletonScope();
+container
+  .bind(TYPES.MovieListingController)
+  .to(MovieListingController)
+  .inSingletonScope();
+container
+  .bind(TYPES.MovieListingRouter)
+  .to(MovieListingRouter)
+  .inSingletonScope();
+container
+  .bind(TYPES.MovieListingService)
+  .to(MovieListingService)
+  .inSingletonScope();
+container
+  .bind(TYPES.TheaterSeatInventoryMapper)
+  .to(TheaterSeatInventoryMapper)
+  .inSingletonScope();
+container
+  .bind(TYPES.TheaterSeatInventoryRepository)
+  .to(TheaterSeatInventoryRepository)
+  .inSingletonScope();
+container
+  .bind(TYPES.MovieBookingService)
+  .to(MovieBookingService)
+  .inSingletonScope();
+container
+  .bind(TYPES.MovieBookingController)
+  .to(MovieBookingController)
+  .inSingletonScope();
+container
+  .bind(TYPES.MovieBookingRouter)
+  .to(MovieBookingRouter)
+  .inSingletonScope();
+container.bind(TYPES.MovieRouter).to(MovieRouter).inSingletonScope();
+
 
 export default container;

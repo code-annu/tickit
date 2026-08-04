@@ -111,11 +111,12 @@ model Theater {
 }
 
 model TheaterSeat {
-  id         String   @id @default(uuid()) @db.Uuid
-  theaterId  String   @map("theater_id") @db.Uuid
-  seatNumber String   @map("seat_number")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id         String @id @default(uuid()) @db.Uuid
+  theaterId  String @map("theater_id") @db.Uuid
+  seatNumber String @map("seat_number")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   theater                Theater                @relation(fields: [theaterId], references: [id], onDelete: Cascade)
   theaterSeatInventories TheaterSeatInventory[]
