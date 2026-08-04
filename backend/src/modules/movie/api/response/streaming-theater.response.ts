@@ -14,7 +14,7 @@ export function buildStreamingTheatersForMovieResponse(
     data: {
       movie: data.movie,
       streamingTheaters: data.theaters,
-      theatersCount: data.theaters.length,
+      count: data.theaters.length,
     },
   };
 }
