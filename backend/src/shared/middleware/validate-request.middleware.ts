@@ -1,7 +1,7 @@
+import ErrorCode from "@/core/error/ErrorCode";
+import BadRequestError from "@/core/error/types/BadRequestError";
 import { NextFunction, Request, Response } from "express";
 import { ZodObject } from "zod";
-import BadRequestError from "../error/types/BadRequestError";
-import ErrorCode from "../error/ErrorCode";
 
 interface ValidationSchemas {
   body?: ZodObject<any>;

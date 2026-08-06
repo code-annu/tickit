@@ -1,6 +1,6 @@
+import AppError from "@/core/error/AppError";
+import ErrorCode from "@/core/error/ErrorCode";
 import { NextFunction, Request, Response } from "express";
-import AppError from "../error/AppError";
-import ErrorCode from "../error/ErrorCode";
 
 export default function handleError(
   error: Error,
