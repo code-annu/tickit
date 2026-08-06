@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server.ts",
+    "seed:movie": "tsx test/seeds/movie.seed.ts",
+    "seed:theater": "tsx test/seeds/theater.seed.ts",
+    "seed:show": "tsx test/seeds/show.seed.ts",
+    "seed:all": "npm run seed:movie && npm run seed:theater && npm run seed:show",
+    "reset:db": "prisma migrate reset"
   },
   "keywords": [],
   "author": "",

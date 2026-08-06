@@ -80,7 +80,8 @@ model Movie {
   title     String
   posterUrl String   @map("poster_url")
   overview  String
-  language  String
+  language     String
+  releasedDate DateTime @map("released_date") @db.Date
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
