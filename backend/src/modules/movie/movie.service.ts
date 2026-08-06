@@ -1,15 +1,20 @@
 import { inject, injectable } from "inversify";
 import TYPES from "@/core/di/inversify.types";
 import MovieRepository from "./repository/movie.repository";
+import MovieShowRepository from "./repository/movie-show.repository";
 import NotFoundError from "@/core/error/types/NotFoundError";
 import MovieErrorCode from "./MovieErrorCode";
 import { Movie } from "./entity/movie.entity";
+import { MovieShow } from "./entity/movie-show.entity";
+import { GetShowsForMovieDto } from "./dto/GetShowsForMovieDto";
 
 @injectable()
 export default class MovieService {
   constructor(
     @inject(TYPES.MovieRepository)
     private readonly movieRepository: MovieRepository,
+    @inject(TYPES.MovieShowRepository)
+    private readonly movieShowRepository: MovieShowRepository,
   ) {}
 
   async getAllMovies(): Promise<Movie[]> {
@@ -25,5 +30,9 @@ export default class MovieService {
       );
     }
     return movie;
+  }
+
+  async getMovieShows(input: GetShowsForMovieDto): Promise<MovieShow[]> {
+    return this.movieShowRepository.findForMovie(input.movieId, input.options);
   }
 }

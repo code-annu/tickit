@@ -4,7 +4,8 @@ import { Movie } from "../entity/movie.entity";
 
 @injectable()
 export default class MovieRepository {
-  constructor(private readonly db = prisma) {}
+  private readonly db = prisma;
+  
   async findAll(): Promise<Movie[]> {
     return this.db.movie.findMany({
       orderBy: { createdAt: "desc" },

@@ -5,6 +5,7 @@ import MovieService from "./movie.service";
 import {
   buildMovieResponse,
   buildMoviesListResponse,
+  buildMovieShowsResponse,
 } from "./movie.response";
 import catchAsync from "@/core/error/async.catch";
 
@@ -17,12 +18,37 @@ export default class MovieController {
 
   getAllMovies = catchAsync(async (_req: Request, res: Response) => {
     const movies = await this.movieService.getAllMovies();
-    res.status(200).json(buildMoviesListResponse(movies, "Movies fetched successfully"));
+    res
+      .status(200)
+      .json(buildMoviesListResponse(movies, "Movies fetched successfully"));
   });
 
   getMovieDetails = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id as string;
-    const movie = await this.movieService.getMovieDetails(id!);
-    res.status(200).json(buildMovieResponse(movie, "Movie details fetched successfully"));
+    const movie = await this.movieService.getMovieDetails(id);
+    res
+      .status(200)
+      .json(buildMovieResponse(movie, "Movie details fetched successfully"));
+  });
+
+  getMovieShows = catchAsync(async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const city = req.query.city as string;
+    const date = new Date(req.query.date as string);
+
+    const movie = await this.movieService.getMovieDetails(id);
+    const shows = await this.movieService.getMovieShows({
+      movieId: id,
+      options: { city, date },
+    });
+
+    res
+      .status(200)
+      .json(
+        buildMovieShowsResponse(
+          { movie, shows },
+          "Movie shows fetched successfully",
+        ),
+      );
   });
 }

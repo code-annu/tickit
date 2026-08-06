@@ -4,6 +4,7 @@ export interface Movie {
   readonly posterUrl: string;
   readonly language: string;
   readonly overview: string;
+  readonly releasedDate: Date;
 
   readonly createdAt: Date;
   readonly updatedAt: Date;

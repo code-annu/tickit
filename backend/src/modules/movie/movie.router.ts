@@ -4,6 +4,7 @@ import TYPES from "@/core/di/inversify.types";
 import MovieController from "./movie.controller";
 import { validateRequest } from "@/shared/middleware/validate-request.middleware";
 import { GetMovieDetailsSchema } from "./schema/GetMovieDetailsSchema";
+import { GetMovieShowsSchema } from "./schema/GetMovieShowsSchema";
 
 @injectable()
 export default class MovieRouter {
@@ -23,6 +24,11 @@ export default class MovieRouter {
       "/:id",
       validateRequest(GetMovieDetailsSchema),
       this.movieController.getMovieDetails,
+    );
+    this.router.get(
+      "/:id/shows",
+      validateRequest(GetMovieShowsSchema),
+      this.movieController.getMovieShows,
     );
   }
 }
