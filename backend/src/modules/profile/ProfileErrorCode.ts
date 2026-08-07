@@ -1,0 +1,6 @@
+enum ProfileErrorCode {
+  PROFILE_ALREADY_EXISTS = "PROFILE_ALREADY_EXISTS",
+  PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND",
+}
+
+export default ProfileErrorCode;
