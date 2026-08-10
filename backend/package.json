@@ -8,8 +8,10 @@
     "dev": "tsx watch src/server.ts",
     "seed:movie": "tsx test/seeds/movie.seed.ts",
     "seed:theater": "tsx test/seeds/theater.seed.ts",
+    "seed:theater-seat": "tsx test/seeds/theater-seat.seed.ts",
     "seed:show": "tsx test/seeds/show.seed.ts",
-    "seed:all": "npm run seed:movie && npm run seed:theater && npm run seed:show",
+    "seed:show-seat": "tsx test/seeds/show-seat-inventory.seed.ts",
+    "seed:all": "npm run seed:movie && npm run seed:theater && npm run seed:theater-seat && npm run seed:show && npm run seed:show-seat",
     "reset:db": "prisma migrate reset"
   },
   "keywords": [],

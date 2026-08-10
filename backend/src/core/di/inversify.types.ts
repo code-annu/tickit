@@ -1,4 +1,25 @@
 const TYPES = {
+  // Util types
+  JWTUtil: Symbol.for("JWTUtil"),
+  ClientInfoUtil: Symbol.for("ClientInfoUtil"),
+
+  // User types
+  UserRepository: Symbol.for("UserRepository"),
+  UserService: Symbol.for("UserService"),
+
+  // Auth types
+  AuthService: Symbol.for("AuthService"),
+  AuthController: Symbol.for("AuthController"),
+  AuthRouter: Symbol.for("AuthRouter"),
+  SessionRepository: Symbol.for("SessionRepository"),
+  ProfileController: Symbol.for("ProfileController"),
+
+  // Profile types
+  ProfileRepository: Symbol.for("ProfileRepository"),
+  ProfileService: Symbol.for("ProfileService"),
+  ProfileMapper: Symbol.for("ProfileMapper"),
+  ProfileRouter: Symbol.for("ProfileRouter"),
+
   // Movie types
   MovieMapper: Symbol.for("MovieMapper"),
   MovieShowMapper: Symbol.for("MovieShowMapper"),
@@ -7,6 +28,22 @@ const TYPES = {
   MovieService: Symbol.for("MovieService"),
   MovieController: Symbol.for("MovieController"),
   MovieRouter: Symbol.for("MovieRouter"),
+
+  // Theater types
+  TheaterShowMapper: Symbol.for("TheaterShowMapper"),
+  TheaterRepository: Symbol.for("TheaterRepository"),
+  TheaterShowRepository: Symbol.for("TheaterShowRepository"),
+  TheaterService: Symbol.for("TheaterService"),
+  TheaterController: Symbol.for("TheaterController"),
+  TheaterRouter: Symbol.for("TheaterRouter"),
+
+  // Show types
+  ShowMapper: Symbol.for("ShowMapper"),
+  ShowRepository: Symbol.for("ShowRepository"),
+  ShowService: Symbol.for("ShowService"),
+  ShowResponse: Symbol.for("ShowResponse"),
+  ShowController: Symbol.for("ShowController"),
+  ShowRouter: Symbol.for("ShowRouter"),
 };
 
 export default TYPES;

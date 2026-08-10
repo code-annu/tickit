@@ -3,7 +3,7 @@ import { StringValue } from "ms";
 import { injectable } from "inversify";
 import crypto from "crypto";
 import { addDays } from "date-fns";
-import ENV from "@/config/env";
+import ENV from "@/core/config/env";
 
 export interface JWTPayload {
   sub: string;

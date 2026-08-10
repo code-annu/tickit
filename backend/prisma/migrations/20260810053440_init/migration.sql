@@ -1,6 +1,9 @@
 -- CreateEnum
 CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER');
 
+-- CreateEnum
+CREATE TYPE "SeatStatus" AS ENUM ('BOOKED', 'HELD', 'AVAILABLE');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" UUID NOT NULL,
@@ -93,14 +96,27 @@ CREATE TABLE "shows" (
     "movie_id" UUID NOT NULL,
     "theater_id" UUID NOT NULL,
     "on_date" DATE NOT NULL,
-    "start_time" TIMESTAMPTZ(3) NOT NULL,
-    "end_time" TIMESTAMPTZ(3) NOT NULL,
+    "start_time" TIME(0) NOT NULL,
+    "end_time" TIME(0) NOT NULL,
     "duration" INTEGER NOT NULL,
     "onward_amount" DECIMAL(10,2) NOT NULL,
     "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "shows_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "show_seats" (
+    "id" UUID NOT NULL,
+    "seat_id" UUID NOT NULL,
+    "show_id" UUID NOT NULL,
+    "status" "SeatStatus" NOT NULL DEFAULT 'AVAILABLE',
+    "price" DECIMAL(10,2) NOT NULL,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
+
+    CONSTRAINT "show_seats_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -145,6 +161,18 @@ CREATE INDEX "shows_on_date_idx" ON "shows"("on_date");
 -- CreateIndex
 CREATE INDEX "shows_theater_id_on_date_idx" ON "shows"("theater_id", "on_date");
 
+-- CreateIndex
+CREATE INDEX "show_seats_show_id_idx" ON "show_seats"("show_id");
+
+-- CreateIndex
+CREATE INDEX "show_seats_seat_id_idx" ON "show_seats"("seat_id");
+
+-- CreateIndex
+CREATE INDEX "show_seats_status_idx" ON "show_seats"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "show_seats_show_id_seat_id_key" ON "show_seats"("show_id", "seat_id");
+
 -- AddForeignKey
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -159,3 +187,9 @@ ALTER TABLE "shows" ADD CONSTRAINT "shows_movie_id_fkey" FOREIGN KEY ("movie_id"
 
 -- AddForeignKey
 ALTER TABLE "shows" ADD CONSTRAINT "shows_theater_id_fkey" FOREIGN KEY ("theater_id") REFERENCES "theaters"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "show_seats" ADD CONSTRAINT "show_seats_seat_id_fkey" FOREIGN KEY ("seat_id") REFERENCES "theater_seats"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "show_seats" ADD CONSTRAINT "show_seats_show_id_fkey" FOREIGN KEY ("show_id") REFERENCES "shows"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -76,10 +76,10 @@ enum Gender {
 }
 
 model Movie {
-  id        String   @id @default(uuid()) @db.Uuid
-  title     String
-  posterUrl String   @map("poster_url")
-  overview  String
+  id           String   @id @default(uuid()) @db.Uuid
+  title        String
+  posterUrl    String   @map("poster_url")
+  overview     String
   language     String
   releasedDate DateTime @map("released_date") @db.Date
 
@@ -120,7 +120,8 @@ model TheaterSeat {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  theater Theater @relation(fields: [theaterId], references: [id], onDelete: Cascade)
+  theater   Theater    @relation(fields: [theaterId], references: [id], onDelete: Cascade)
+  showSeats ShowSeat[]
 
   @@unique([theaterId, rowName, seatNumber])
   @@index([theaterId])
@@ -132,8 +133,8 @@ model Show {
   movieId      String   @map("movie_id") @db.Uuid
   theaterId    String   @map("theater_id") @db.Uuid
   onDate       DateTime @map("on_date") @db.Date
-  startTime    DateTime @map("start_time") @db.Timestamptz(3)
-  endTime      DateTime @map("end_time") @db.Timestamptz(3)
+  startTime    DateTime @map("start_time") @db.Time(0)
+  endTime      DateTime @map("end_time") @db.Time(0)
   duration     Int
   onwardAmount Decimal  @map("onward_amount") @db.Decimal(10, 2)
 
@@ -143,9 +144,37 @@ model Show {
   movie   Movie   @relation(fields: [movieId], references: [id], onDelete: Cascade)
   theater Theater @relation(fields: [theaterId], references: [id], onDelete: Cascade)
 
+  showSeats ShowSeat[]
+
   @@index([movieId])
   @@index([theaterId])
   @@index([onDate])
   @@index([theaterId, onDate])
   @@map("shows")
+}
+
+model ShowSeat {
+  id     String     @id @default(uuid()) @db.Uuid
+  seatId String     @map("seat_id") @db.Uuid
+  showId String     @map("show_id") @db.Uuid
+  status SeatStatus @default(AVAILABLE)
+  price  Decimal    @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  seat TheaterSeat @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  show Show        @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  @@unique([showId, seatId])
+  @@index([showId])
+  @@index([seatId])
+  @@index([status])
+  @@map("show_seats")
+}
+
+enum SeatStatus {
+  BOOKED
+  HELD
+  AVAILABLE
 }

@@ -9,7 +9,7 @@ import authenticateUser from "@/shared/middleware/authenticate.middleware";
 
 @injectable()
 export default class AuthRouter {
-  private readonly router;
+  public readonly router: Router;
   constructor(
     @inject(TYPES.AuthController)
     private readonly authController: AuthController,
