@@ -12,13 +12,12 @@ export default abstract class AuthHelper {
     authUser: AuthUser;
     cookies: any;
   }> {
-    await UserFactory.createUser("peter@gmail.com", "Peter@1234");
+    const email = `test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}@example.com`;
+    const password = "Peter@1234";
+    await UserFactory.createUser(email, password);
     const response = await request(app)
       .post("/api/auth/login")
-      .send({
-        email: "peter@gmail.com",
-        password: "Peter@1234",
-      })
+      .send({ email, password })
       .expect(200);
     const cookies = response.headers["set-cookie"];
 
