@@ -2,7 +2,11 @@ import { MovieShow } from "./entity/movie-show.entity";
 import { Movie } from "./entity/movie.entity";
 
 export function buildMovieResponse(data: Movie, message: string) {
-  return { success: true, message, data };
+  return {
+    success: true,
+    message,
+    data: data,
+  };
 }
 
 export function buildMoviesListResponse(data: Movie[], message: string) {
@@ -20,5 +24,13 @@ export function buildMovieShowsResponse(
   data: { movie: Movie; shows: MovieShow[] },
   message: string,
 ) {
-  return { success: true, message, data };
+  return {
+    success: true,
+    message,
+    data: {
+      movie: data.movie,
+      shows: data.shows,
+      totalShows: data.shows.length,
+    },
+  };
 }

@@ -28,8 +28,6 @@ const movieFixture: Movie = {
   language: "English",
   overview: "A mind-bending thriller",
   releasedDate: new Date("2010-07-16"),
-  createdAt: now,
-  updatedAt: now,
 };
 
 const movieFixture2: Movie = {
@@ -39,8 +37,6 @@ const movieFixture2: Movie = {
   language: "English",
   overview: "A space odyssey",
   releasedDate: new Date("2014-11-07"),
-  createdAt: now,
-  updatedAt: now,
 };
 
 const movieShowFixture: MovieShow = {

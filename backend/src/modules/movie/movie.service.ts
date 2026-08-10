@@ -6,7 +6,7 @@ import NotFoundError from "@/core/error/types/NotFoundError";
 import MovieErrorCode from "./MovieErrorCode";
 import { Movie } from "./entity/movie.entity";
 import { MovieShow } from "./entity/movie-show.entity";
-import { GetShowsForMovieDto } from "./dto/GetShowsForMovieDto";
+import { GetMovieShowsDto } from "./dto/GetMovieShowsDto";
 
 @injectable()
 export default class MovieService {
@@ -32,7 +32,7 @@ export default class MovieService {
     return movie;
   }
 
-  async getMovieShows(input: GetShowsForMovieDto): Promise<MovieShow[]> {
+  async getMovieShows(input: GetMovieShowsDto): Promise<MovieShow[]> {
     return this.movieShowRepository.findForMovie(input.movieId, input.options);
   }
 }
