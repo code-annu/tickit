@@ -45,7 +45,7 @@ export default class AuthService {
       gender: rest.gender,
       city: rest.city,
       avatarUrl: rest.avatarUrl ?? null,
-      dob: rest.dob ?? null,
+      dob: rest.dob ? new Date(rest.dob) : null,
     });
 
     return this.createSession(user, client);
@@ -63,11 +63,19 @@ export default class AuthService {
       throw new InvalidCredentialsError("Invalid auth credentials");
     }
 
-    return this.createSession(user, client);
+    let newSession: UserSession;
+
+    const existingSession = await this.sessionRepo.findByUserId(user.id);
+    if (existingSession) {
+      await this.sessionRepo.delete(existingSession.id);
+    }
+
+    newSession = await this.createSession(user, client);
+    return newSession;
   }
 
   async refreshSession(input: RefreshSessionDto) {
-    const { client, token } = input;
+    const { token } = input;
     if (!token) {
       throw new MissingRefreshTokenError("Refresh token is missing");
     }
@@ -78,9 +86,11 @@ export default class AuthService {
       throw new InvalidRefreshTokenError("Refresh token is invalid");
     }
     if (session.expiresAt < new Date()) {
+      await this.sessionRepo.revoke(session.id);
       throw new ExpiredRefreshTokenError("Refresh token is expired");
     }
     if (session.revokedAt) {
+      await this.sessionRepo.revoke(session.id);
       throw new RevokedRefreshTokenError("Refresh token is revoked");
     }
     if (session.user.deletedAt || session.user.isBanned) {
@@ -88,7 +98,7 @@ export default class AuthService {
     }
 
     const refreshToken = this.jwtUtil.generateRefreshToken();
-    const updatedSession = await this.sessionRepo.update(session.id, {
+    const updatedSession = await this.sessionRepo.rotateToken(session.id, {
       tokenHash: this.jwtUtil.hashToken(refreshToken),
       expiresAt: this.jwtUtil.getRefreshTokenExpiry(),
     });

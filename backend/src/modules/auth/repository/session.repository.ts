@@ -46,7 +46,7 @@ export default class SessionRepository {
     return session ? this.mapper.toSessionEntity(session) : null;
   }
 
-  async update(
+  async rotateToken(
     id: string,
     data: Prisma.SessionUpdateInput,
   ): Promise<UserSession> {

@@ -81,9 +81,11 @@ function createMocks() {
 
   const sessionRepo: Record<string, Mock> = {
     create: vi.fn(),
+    findByUserId: vi.fn(),
     findByTokenHash: vi.fn(),
-    update: vi.fn(),
+    rotateToken: vi.fn(),
     revoke: vi.fn(),
+    delete: vi.fn(),
   };
 
   const jwtUtil: Record<string, Mock> = {
@@ -211,6 +213,7 @@ describe("Login", () => {
     const { authService, userRepo, sessionRepo, jwtUtil } = createMocks();
     (userRepo.findByEmail as Mock).mockResolvedValue(mockUser);
     (bcrypt.compare as Mock).mockResolvedValue(true);
+    (sessionRepo.findByUserId as Mock).mockResolvedValue(null);
     (sessionRepo.create as Mock).mockResolvedValue({ ...mockSession });
 
     const result = await authService.login({
@@ -224,10 +227,31 @@ describe("Login", () => {
       "password123",
       mockUser.passwordHash,
     );
+    expect(sessionRepo.findByUserId).toHaveBeenCalledWith(mockUser.id);
+    expect(sessionRepo.delete).not.toHaveBeenCalled();
     expect(sessionRepo.create).toHaveBeenCalled();
     expect(jwtUtil.generateAccessToken).toHaveBeenCalled();
     expect(result.accessToken).toBe("access-token-jwt");
     expect(result.refreshToken).toBe("raw-refresh-token");
+  });
+
+  it("should delete existing session before creating a new one", async () => {
+    const { authService, userRepo, sessionRepo } = createMocks();
+    (userRepo.findByEmail as Mock).mockResolvedValue(mockUser);
+    (bcrypt.compare as Mock).mockResolvedValue(true);
+    (sessionRepo.findByUserId as Mock).mockResolvedValue(mockSession);
+    (sessionRepo.delete as Mock).mockResolvedValue(undefined);
+    (sessionRepo.create as Mock).mockResolvedValue({ ...mockSession });
+
+    await authService.login({
+      email: "john@example.com",
+      password: "password123",
+      client: mockClient,
+    });
+
+    expect(sessionRepo.findByUserId).toHaveBeenCalledWith(mockUser.id);
+    expect(sessionRepo.delete).toHaveBeenCalledWith(mockSession.id);
+    expect(sessionRepo.create).toHaveBeenCalled();
   });
 
   it("should throw InvalidCredentialsError when user is not found", async () => {
@@ -296,7 +320,7 @@ describe("Refresh Session", () => {
     const { authService, sessionRepo, jwtUtil } = createMocks();
     const existingSession = { ...mockSession };
     (sessionRepo.findByTokenHash as Mock).mockResolvedValue(existingSession);
-    (sessionRepo.update as Mock).mockResolvedValue({ ...existingSession });
+    (sessionRepo.rotateToken as Mock).mockResolvedValue({ ...existingSession });
 
     const result = await authService.refreshSession({
       token: "old-refresh-token",
@@ -307,7 +331,7 @@ describe("Refresh Session", () => {
     expect(jwtUtil.hashToken).toHaveBeenCalledWith("old-refresh-token");
 
     // Session update with rotated token
-    expect(sessionRepo.update).toHaveBeenCalledWith(
+    expect(sessionRepo.rotateToken).toHaveBeenCalledWith(
       mockSession.id,
       expect.objectContaining({
         tokenHash: "hashed-refresh-token",
@@ -366,6 +390,8 @@ describe("Refresh Session", () => {
         client: mockClient,
       }),
     ).rejects.toThrow(ExpiredRefreshTokenError);
+
+    expect(sessionRepo.revoke).toHaveBeenCalledWith(expiredSession.id);
   });
 
   it("should throw RevokedRefreshTokenError when session is revoked", async () => {
@@ -382,6 +408,8 @@ describe("Refresh Session", () => {
         client: mockClient,
       }),
     ).rejects.toThrow(RevokedRefreshTokenError);
+
+    expect(sessionRepo.revoke).toHaveBeenCalledWith(revokedSession.id);
   });
 
   it("should throw InvalidCredentialsError when user is soft-deleted", async () => {

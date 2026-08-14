@@ -1,6 +1,7 @@
 import AppError from "@/core/error/AppError";
 import StatusCode from "@/core/error/StatusCode";
 import AuthErrorCode from "./AuthErrorCode";
+import { extend } from "zod/mini";
 
 export class EmailAlreadyExists extends AppError {
   constructor(message: string) {
@@ -62,3 +63,22 @@ export class RevokedRefreshTokenError extends AppError {
   }
 }
 
+export class MissingAccessToken extends AppError {
+  constructor(message: string) {
+    super({
+      message,
+      statusCode: StatusCode.Error.UNAUTHORIZED,
+      code: AuthErrorCode.MISSING_ACCESS_TOKEN,
+    });
+  }
+}
+
+export class InvalidAccessTokenError extends AppError {
+  constructor(message: string) {
+    super({
+      statusCode: StatusCode.Error.UNAUTHORIZED,
+      message,
+      code: AuthErrorCode.INVALID_ACCESS_TOKEN,
+    });
+  }
+}
