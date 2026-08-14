@@ -2,5 +2,5 @@ import app from "./app";
 import ENV from "./core/config/env";
 
 app.listen(ENV.PORT, () => {
-  console.log(`Server is running: http://localhost:${ENV.PORT}`);
+  console.log(`Server is running:  http://localhost:${ENV.PORT}/api`);
 });

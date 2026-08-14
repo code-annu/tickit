@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -12,62 +10,7 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id              String    @id @default(uuid()) @db.Uuid
-  email           String    @unique
-  passwordHash    String    @map("password_hash")
-  isEmailVerified Boolean   @default(false) @map("is_email_verified")
-  isBanned        Boolean   @default(false) @map("is_banned")
-  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  session  Session?
-  profiles Profile?
-
-  @@index([email])
-  @@map("users")
-}
-
-model Session {
-  id               String   @id @default(uuid()) @db.Uuid
-  userId           String   @unique @map("user_id") @db.Uuid
-  refreshTokenHash String   @unique @map("refresh_token_hash")
-  expiresAt        DateTime @map("expires_at") @db.Timestamptz(3)
-  lastUsedAt       DateTime @default(now()) @map("last_used_at") @db.Timestamptz(3)
-
-  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
-
-  deviceName String? @map("device_name")
-  deviceType String? @map("device_type")
-  ipAddress  String? @map("ip_address")
-  userAgent  String? @map("user_agent")
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, refreshTokenHash])
-  @@map("sessions")
-}
-
-model Profile {
-  id String @id @db.Uuid
-
-  fullname  String    @map("full_name")
-  dob       DateTime? @db.Date
-  gender    Gender
-  avatarUrl String?   @map("avatar_url")
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  user User @relation(fields: [id], references: [id], onDelete: Cascade)
-
-  @@index([fullname])
-  @@map("profiles")
-}
+// ─── Enums ───────────────────────────────────────────────
 
 enum Gender {
   MALE
@@ -75,106 +18,195 @@ enum Gender {
   OTHER
 }
 
-model Movie {
-  id           String   @id @default(uuid()) @db.Uuid
-  title        String
-  posterUrl    String   @map("poster_url")
-  overview     String
-  language     String
-  releasedDate DateTime @map("released_date") @db.Date
+enum SeatStatus {
+  AVAILABLE
+  HELD
+  BOOKED
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  @@map("seat_status")
+}
+
+enum SeatHoldStatus {
+  ACTIVE
+  EXPIRED
+  RELEASED
+  CONVERTED
+
+  @@map("seat_hold_status")
+}
+
+// ─── Models ──────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique @db.VarChar(255)
+  passwordHash    String    @map("password_hash") @db.VarChar(255)
+  firstName       String    @map("first_name") @db.VarChar(100)
+  lastName        String?   @map("last_name") @db.VarChar(100)
+  avatarUrl       String?   @map("avatar_url") @db.Text
+  dob             DateTime? @db.Date
+  gender          Gender
+  city            String    @db.VarChar(100)
+  isEmailVerified Boolean   @default(false) @map("is_email_verified")
+  isBanned        Boolean   @default(false) @map("is_banned")
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz()
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  sessions  Session[]
+  seatHolds SeatHold[]
+
+  @@index([city])
+  @@index([isEmailVerified])
+  @@map("users")
+}
+
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @unique @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz()
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz()
+  deviceName String?   @map("device_name") @db.VarChar(150)
+  deviceType String?   @map("device_type") @db.VarChar(50)
+  userAgent  String?   @map("user_agent") @db.Text
+  ipAddress  String?   @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Movie {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(255)
+  overview    String   @db.Text
+  releaseDate DateTime @map("release_date") @db.Date
+  language    String   @db.VarChar(50)
+  posterUrl   String   @map("poster_url") @db.Text
+  durationMin Int      @map("duration_min")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   shows Show[]
 
+  @@index([releaseDate])
   @@index([language])
   @@map("movies")
 }
 
 model Theater {
-  id              String @id @default(uuid()) @db.Uuid
-  name            String
-  city            String
-  avatarUrl       String @map("avatar_url")
-  address         String
-  rating          Float
-  seatingCapacity Int    @map("seating_capacity")
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String   @db.VarChar(255)
+  city            String   @db.VarChar(100)
+  address         String   @db.Text
+  rating          Float    @default(0) @db.DoublePrecision
+  avatarUrl       String   @map("avatar_url") @db.Text
+  seatingCapacity Int      @map("seating_capacity")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  seats TheaterSeat[]
+  seats Seat[]
   shows Show[]
 
   @@index([city])
   @@map("theaters")
 }
 
-model TheaterSeat {
-  id         String @id @default(uuid()) @db.Uuid
-  theaterId  String @map("theater_id") @db.Uuid
-  rowName    String @map("row_name")
-  seatNumber Int    @map("seat_number")
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+model Seat {
+  id         String   @id @default(uuid()) @db.Uuid
+  theaterId  String   @map("theater_id") @db.Uuid
+  rowName    String   @map("row_name") @db.VarChar(10)
+  seatNumber Int      @map("seat_number")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   theater   Theater    @relation(fields: [theaterId], references: [id], onDelete: Cascade)
   showSeats ShowSeat[]
 
   @@unique([theaterId, rowName, seatNumber])
   @@index([theaterId])
-  @@map("theater_seats")
+  @@map("seats")
 }
 
 model Show {
-  id           String   @id @default(uuid()) @db.Uuid
-  movieId      String   @map("movie_id") @db.Uuid
-  theaterId    String   @map("theater_id") @db.Uuid
-  onDate       DateTime @map("on_date") @db.Date
-  startTime    DateTime @map("start_time") @db.Time(0)
-  endTime      DateTime @map("end_time") @db.Time(0)
-  duration     Int
-  onwardAmount Decimal  @map("onward_amount") @db.Decimal(10, 2)
+  id        String   @id @default(uuid()) @db.Uuid
+  movieId   String   @map("movie_id") @db.Uuid
+  theaterId String   @map("theater_id") @db.Uuid
+  onDate    DateTime @map("on_date") @db.Date
+  startTime DateTime @map("start_time") @db.Time()
+  endTime   DateTime @map("end_time") @db.Time()
+  basePrice Decimal  @map("base_price") @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  movie   Movie   @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  theater Theater @relation(fields: [theaterId], references: [id], onDelete: Cascade)
-
+  movie     Movie      @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  theater   Theater    @relation(fields: [theaterId], references: [id], onDelete: Cascade)
   showSeats ShowSeat[]
+  seatHolds SeatHold[]
 
   @@index([movieId])
   @@index([theaterId])
   @@index([onDate])
-  @@index([theaterId, onDate])
+  @@index([movieId, theaterId, onDate])
   @@map("shows")
 }
 
 model ShowSeat {
-  id     String     @id @default(uuid()) @db.Uuid
-  seatId String     @map("seat_id") @db.Uuid
-  showId String     @map("show_id") @db.Uuid
-  status SeatStatus @default(AVAILABLE)
-  price  Decimal    @db.Decimal(10, 2)
+  id        String     @id @default(uuid()) @db.Uuid
+  seatId    String     @map("seat_id") @db.Uuid
+  showId    String     @map("show_id") @db.Uuid
+  price     Decimal    @db.Decimal(10, 2)
+  status    SeatStatus @default(AVAILABLE)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  seat          Seat           @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  show          Show           @relation(fields: [showId], references: [id], onDelete: Cascade)
+  seatHoldItems SeatHoldItem[]
 
-  seat TheaterSeat @relation(fields: [seatId], references: [id], onDelete: Cascade)
-  show Show        @relation(fields: [showId], references: [id], onDelete: Cascade)
-
-  @@unique([showId, seatId])
+  @@unique([seatId, showId])
   @@index([showId])
-  @@index([seatId])
   @@index([status])
   @@map("show_seats")
 }
 
-enum SeatStatus {
-  BOOKED
-  HELD
-  AVAILABLE
+model SeatHold {
+  id        String         @id @default(uuid()) @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
+  showId    String         @map("show_id") @db.Uuid
+  status    SeatHoldStatus @default(ACTIVE)
+  expiresAt DateTime       @map("expires_at") @db.Timestamptz()
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz()
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  show  Show           @relation(fields: [showId], references: [id], onDelete: Cascade)
+  items SeatHoldItem[]
+
+  @@index([userId])
+  @@index([showId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("seat_holds")
+}
+
+model SeatHoldItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  holdId     String   @map("hold_id") @db.Uuid
+  showSeatId String   @map("show_seat_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  hold     SeatHold @relation(fields: [holdId], references: [id], onDelete: Cascade)
+  showSeat ShowSeat @relation(fields: [showSeatId], references: [id], onDelete: Cascade)
+
+  @@unique([holdId, showSeatId])
+  @@index([holdId])
+  @@index([showSeatId])
+  @@map("seat_hold_items")
 }

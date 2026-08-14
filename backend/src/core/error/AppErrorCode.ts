@@ -1,8 +1,7 @@
-enum ErrorCode {
-  INVALID_REQUEST = "INVALID_REQUEST",
-
+enum AppErrorCode {
+  BAD_REQUEST = "INVALID_REQUEST",
   RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED",
   INTERNAL_SERVER = "INTERNAL_SERVER",
 }
 
-export default ErrorCode;
+export default AppErrorCode;

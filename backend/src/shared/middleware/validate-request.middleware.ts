@@ -1,5 +1,5 @@
-import ErrorCode from "@/core/error/ErrorCode";
-import BadRequestError from "@/core/error/types/BadRequestError";
+import AppErrorCode from "@/core/error/AppErrorCode";
+import { BadRequestError } from "@/core/error/app.errors";
 import { NextFunction, Request, Response } from "express";
 import { ZodObject } from "zod";
 
@@ -17,7 +17,6 @@ export const validateRequest =
       if (!result.success) {
         throw new BadRequestError(
           "Missing or invalid request body",
-          ErrorCode.INVALID_REQUEST,
           result.error.issues.map((issue) => ({
             message: issue.message,
             field: issue.path,
@@ -32,7 +31,6 @@ export const validateRequest =
       if (!result.success) {
         throw new BadRequestError(
           "Missing or invalid query parameters",
-          ErrorCode.INVALID_REQUEST,
           result.error.issues.map((issue) => ({
             message: issue.message,
             field: issue.path,
@@ -46,7 +44,6 @@ export const validateRequest =
       if (!result.success) {
         throw new BadRequestError(
           "Missing or invalid path parameters",
-          ErrorCode.INVALID_REQUEST,
           result.error.issues.map((issue) => ({
             message: issue.message,
             field: issue.path,

@@ -4,15 +4,15 @@ const TYPES = {
   ClientInfoUtil: Symbol.for("ClientInfoUtil"),
 
   // User types
-  UserRepository: Symbol.for("UserRepository"),
-  UserService: Symbol.for("UserService"),
 
   // Auth types
+  AuthMapper: Symbol.for("AuthMapper"),
   AuthService: Symbol.for("AuthService"),
   AuthController: Symbol.for("AuthController"),
+  AuthResponse: Symbol.for("AuthResponse"),
   AuthRouter: Symbol.for("AuthRouter"),
   SessionRepository: Symbol.for("SessionRepository"),
-  ProfileController: Symbol.for("ProfileController"),
+  UserRepository: Symbol.for("UserRepository"),
 
   // Profile types
   ProfileRepository: Symbol.for("ProfileRepository"),

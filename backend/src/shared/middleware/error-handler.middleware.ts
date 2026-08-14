@@ -1,5 +1,5 @@
 import AppError from "@/core/error/AppError";
-import ErrorCode from "@/core/error/ErrorCode";
+import AppErrorCode from "@/core/error/AppErrorCode";
 import { NextFunction, Request, Response } from "express";
 
 export default function handleError(
@@ -24,7 +24,7 @@ export default function handleError(
   res.status(500).json({
     success: false,
     error: {
-      code: ErrorCode.INTERNAL_SERVER,
+      code: AppErrorCode.INTERNAL_SERVER,
       message: error.message,
     },
   });
