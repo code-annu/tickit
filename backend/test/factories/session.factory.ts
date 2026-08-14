@@ -1,5 +1,5 @@
 import { prisma } from "@/core/prisma/prisma.client";
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma/client";
 
 export default abstract class SessionFactory {
   static async createSession(
@@ -16,7 +16,7 @@ export default abstract class SessionFactory {
 
   static async findByTokenHash(tokenHash: string): Promise<any> {
     return prisma.session.findUnique({
-      where: { refreshTokenHash: tokenHash },
+      where: { tokenHash: tokenHash },
     });
   }
 

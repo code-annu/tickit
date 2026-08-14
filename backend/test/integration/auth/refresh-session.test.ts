@@ -1,174 +1,226 @@
+import app from "@/app";
+import crypto from "crypto";
 import request from "supertest";
 import { resetDb } from "../../helpers/cleanup";
-import app from "@/app";
-import AuthHelper from "../../helpers/auth.helper";
-import AuthErrorCode from "@/modules/auth/AuthErrorCode";
-import SessionFactory from "../../factories/session.factory";
 import UserFactory from "../../factories/user.factory";
-import { subDays } from "date-fns";
+import SessionFactory from "../../factories/session.factory";
+import AuthHelper from "../../helpers/auth.helper";
+import AuthErrorCode from "@/modules/auth/error/AuthErrorCode";
+import { addDays, subDays } from "date-fns";
 
-describe("POST /api/auth/refresh-session", () => {
-  const REFRESH_SESSION_PATH = "/api/auth/refresh-session";
+const API = "/api/auth/refresh";
 
-  beforeEach(async () => {
-    await resetDb();
-  });
+/** Extracts the refresh token cookie string from a set-cookie header or array */
+function extractRefreshCookie(cookies: any): string | undefined {
+  if (!cookies) return undefined;
+  const arr = Array.isArray(cookies) ? cookies : [cookies];
+  return arr.find((c: string) => c.startsWith("refreshToken="));
+}
 
-  // ── Happy Path ────────────────────────────────────────────────────────────
+/** Extracts the raw refresh token value from the cookie header */
+function extractRefreshTokenValue(cookieStr: string): string {
+  const match = cookieStr.match(/refreshToken=([^;]+)/);
+  return match ? match[1]! : "";
+}
 
-  it("should refresh the session and return 200 with new tokens", async () => {
-    const { cookies } = await AuthHelper.getAuthenticatedUser();
+beforeEach(async () => {
+  await resetDb();
+});
 
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(200);
+describe("POST /api/auth/refresh", () => {
+  // ─── Happy path ────────────────────────────────────────────
+  describe("Success", () => {
+    it("should return 200 with new tokens when refresh token is valid", async () => {
+      const { authUser, cookies } = await AuthHelper.getAuthenticatedUser();
+      const cookie = extractRefreshCookie(cookies);
+      expect(cookie).toBeDefined();
 
-    expect(response.body.success).toBe(true);
-    expect(response.body.data).toHaveProperty("session");
-    expect(response.body.data).toHaveProperty("user");
-    expect(response.body.data.session).toHaveProperty("id");
-    expect(response.body.data.session).toHaveProperty("accessToken");
-  });
+      const tokenValue = extractRefreshTokenValue(cookie!);
 
-  it("should set a new refreshToken cookie after refresh", async () => {
-    const { cookies } = await AuthHelper.getAuthenticatedUser();
+      const res = await request(app)
+        .post(API)
+        .set("Cookie", [cookie!])
+        .send({ token: tokenValue })
+        .expect(200);
 
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(200);
+      expect(res.body).toHaveProperty("user");
+      expect(res.body).toHaveProperty("session");
+      expect(res.body.session).toHaveProperty("accessToken");
+      expect(res.body.user.email).toBe(authUser.user.email);
 
-    const newCookies = response.headers["set-cookie"];
-    expect(newCookies).toBeDefined();
-    const refreshCookie = Array.isArray(newCookies)
-      ? newCookies.find((c: string) => c.startsWith("refreshToken="))
-      : (newCookies as string).startsWith("refreshToken=")
-        ? newCookies
-        : undefined;
-    expect(refreshCookie).toBeDefined();
-  });
-
-  it("should issue a different access token after refresh", async () => {
-    const { authUser, cookies } = await AuthHelper.getAuthenticatedUser();
-
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(200);
-
-    expect(response.body.data.session.accessToken).not.toBe(
-      authUser.session.accessToken,
-    );
-  });
-
-  // ── Missing Token ─────────────────────────────────────────────────────────
-
-  it("should return 401 when no refresh token cookie is sent", async () => {
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .expect(401);
-
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.code).toBe(AuthErrorCode.MISSING_REFRESH_TOKEN);
-  });
-
-  // ── Invalid Token ─────────────────────────────────────────────────────────
-
-  it("should return 401 when refresh token is invalid", async () => {
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", "refreshToken=completely_invalid_token")
-      .expect(401);
-
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.code).toBe(AuthErrorCode.INVALID_REFRESH_TOKEN);
-  });
-
-  // ── Expired Token ─────────────────────────────────────────────────────────
-
-  it("should return 401 when refresh token is expired", async () => {
-    const { authUser, cookies } = await AuthHelper.getAuthenticatedUser();
-    await SessionFactory.update(authUser.session.id, {
-      expiresAt: subDays(new Date(), 1),
+      // New refresh cookie should be set
+      const newCookie = extractRefreshCookie(res.headers["set-cookie"]);
+      expect(newCookie).toBeDefined();
     });
 
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(401);
+    it("should rotate the refresh token (old token becomes invalid)", async () => {
+      const { cookies } = await AuthHelper.getAuthenticatedUser();
+      const cookie = extractRefreshCookie(cookies);
+      const oldTokenValue = extractRefreshTokenValue(cookie!);
 
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.code).toBe(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
-  });
+      // First refresh — should succeed
+      await request(app)
+        .post(API)
+        .set("Cookie", [cookie!])
+        .send({ token: oldTokenValue })
+        .expect(200);
 
-  // ── Revoked Token ─────────────────────────────────────────────────────────
-
-  it("should return 401 when session is revoked", async () => {
-    const { authUser, cookies } = await AuthHelper.getAuthenticatedUser();
-    await SessionFactory.update(authUser.session.id, {
-      revokedAt: new Date(),
+      // Old token in DB should no longer exist since tokenHash was rotated
+      const oldTokenHash = crypto
+        .createHash("sha256")
+        .update(oldTokenValue)
+        .digest("hex");
+      const oldSession = await SessionFactory.findByTokenHash(oldTokenHash);
+      expect(oldSession).toBeNull();
     });
 
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(401);
+    it("should return a new access token different from the previous one", async () => {
+      const { authUser, cookies } = await AuthHelper.getAuthenticatedUser();
+      const cookie = extractRefreshCookie(cookies);
+      const tokenValue = extractRefreshTokenValue(cookie!);
 
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.code).toBe(AuthErrorCode.REVOKED_REFRESH_TOKEN);
+      const res = await request(app)
+        .post(API)
+        .set("Cookie", [cookie!])
+        .send({ token: tokenValue })
+        .expect(200);
+
+      expect(res.body.session.accessToken).not.toBe(
+        authUser.session.accessToken,
+      );
+    });
   });
 
-  // ── Deleted / Banned User ─────────────────────────────────────────────────
+  // ─── Missing token ────────────────────────────────────────
+  describe("Missing token", () => {
+    it("should return 401 when no refresh token is provided", async () => {
+      const res = await request(app).post(API).send({}).expect(401);
 
-  it("should return 401 when user is soft-deleted", async () => {
-    const { authUser, cookies } = await AuthHelper.getAuthenticatedUser();
-    await UserFactory.update(authUser.user.id, {
-      deletedAt: new Date(),
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe(AuthErrorCode.MISSING_REFRESH_TOKEN);
     });
 
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(401);
+    it("should return 401 when token is null", async () => {
+      const res = await request(app)
+        .post(API)
+        .send({ token: null })
+        .expect(401);
 
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe(AuthErrorCode.MISSING_REFRESH_TOKEN);
+    });
   });
 
-  it("should return 401 when user is banned", async () => {
-    const { authUser, cookies } = await AuthHelper.getAuthenticatedUser();
-    await UserFactory.update(authUser.user.id, {
-      isBanned: true,
+  // ─── Invalid token ────────────────────────────────────────
+  describe("Invalid token", () => {
+    it("should return 401 when refresh token does not match any session", async () => {
+      const res = await request(app)
+        .post(API)
+        .send({ token: "totally-fake-token-that-doesnt-exist" })
+        .expect(401);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe(AuthErrorCode.INVALID_REFRESH_TOKEN);
+    });
+  });
+
+  // ─── Expired token ────────────────────────────────────────
+  describe("Expired token", () => {
+    it("should return 401 when refresh token session is expired", async () => {
+      const user = await UserFactory.createUser("expired@example.com", "Peter@1234");
+      const rawToken = crypto.randomBytes(64).toString("hex");
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
+
+      await SessionFactory.createSession(user.id, {
+        tokenHash,
+        expiresAt: subDays(new Date(), 1), // expired yesterday
+      });
+
+      const res = await request(app)
+        .post(API)
+        .send({ token: rawToken })
+        .expect(401);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
+    });
+  });
+
+  // ─── Revoked token ────────────────────────────────────────
+  describe("Revoked token", () => {
+    it("should return 401 when refresh token session is revoked", async () => {
+      const user = await UserFactory.createUser("revoked@example.com", "Peter@1234");
+      const rawToken = crypto.randomBytes(64).toString("hex");
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
+
+      await SessionFactory.createSession(user.id, {
+        tokenHash,
+        expiresAt: addDays(new Date(), 7),
+        revokedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .post(API)
+        .send({ token: rawToken })
+        .expect(401);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe(AuthErrorCode.REVOKED_REFRESH_TOKEN);
+    });
+  });
+
+  // ─── Banned / deleted user ────────────────────────────────
+  describe("Banned / deleted user", () => {
+    it("should return 401 when user is banned", async () => {
+      const user = await UserFactory.createUser("banned@example.com", "Peter@1234");
+      const rawToken = crypto.randomBytes(64).toString("hex");
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
+
+      await SessionFactory.createSession(user.id, {
+        tokenHash,
+        expiresAt: addDays(new Date(), 7),
+      });
+      await UserFactory.update(user.id, { isBanned: true });
+
+      const res = await request(app)
+        .post(API)
+        .send({ token: rawToken })
+        .expect(401);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
     });
 
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(401);
+    it("should return 401 when user is soft-deleted", async () => {
+      const user = await UserFactory.createUser("deleted@example.com", "Peter@1234");
+      const rawToken = crypto.randomBytes(64).toString("hex");
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
 
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
-  });
+      await SessionFactory.createSession(user.id, {
+        tokenHash,
+        expiresAt: addDays(new Date(), 7),
+      });
+      await UserFactory.update(user.id, { deletedAt: new Date() });
 
-  // ── Old Token After Rotation ──────────────────────────────────────────────
+      const res = await request(app)
+        .post(API)
+        .send({ token: rawToken })
+        .expect(401);
 
-  it("should reject the old refresh token after a successful rotation", async () => {
-    const { cookies } = await AuthHelper.getAuthenticatedUser();
-
-    // First refresh - should succeed
-    await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(200);
-
-    // Second refresh with old cookie - should fail because token hash changed
-    const response = await request(app)
-      .post(REFRESH_SESSION_PATH)
-      .set("Cookie", cookies!)
-      .expect(401);
-
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.code).toBe(AuthErrorCode.INVALID_REFRESH_TOKEN);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
+    });
   });
 });

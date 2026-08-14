@@ -1,18 +1,22 @@
 import bcrypt from "bcrypt";
-import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/core/prisma/prisma.client";
+import { Prisma } from "@/generated/prisma/client";
 
 export default abstract class UserFactory {
   static async createUser(email: string, password: string): Promise<any> {
     return prisma.user.create({
       data: {
-        email,
+        email: email,
         passwordHash: await bcrypt.hash(password, 10),
+        firstName: "John",
+        lastName: "Doe",
+        gender: "MALE",
+        city: "New York",
       },
     });
   }
 
-  static async findById(id: string): Promise<any> {
+  static async findById(id: string) {
     return prisma.user.findUnique({
       where: { id },
     });

@@ -22,7 +22,7 @@ export default abstract class AuthHelper {
     const cookies = response.headers["set-cookie"];
 
     return {
-      authUser: response.body.data,
+      authUser: response.body.data ?? response.body,
       cookies,
     };
   }
