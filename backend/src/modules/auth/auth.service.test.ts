@@ -1,400 +1,443 @@
-import { User } from "@/shared/user/entity/user.entity";
+import { vi, type Mock } from "vitest";
 import AuthService from "./auth.service";
-import { Session } from "./entity/session.entity";
-import { addDays, subHours } from "date-fns";
-import ConflictError from "@/core/error/types/ConflictError";
-import UserErrorCode from "@/shared/user/UserErrorCode";
-import UnauthorizedError from "@/core/error/types/UnAuthorizedError";
-import AuthErrorCode from "./AuthErrorCode";
+import type UserRepository from "./repository/user.repository";
+import type SessionRepository from "./repository/session.repository";
+import type JWTUtil from "@/shared/util/jwt.util";
+import type { User } from "./entity/user.entity";
+import type { UserSession } from "./entity/session.entity";
+import type { ClientInfoType } from "@/shared/util/client-info.util";
+import {
+  EmailAlreadyExists,
+  ExpiredRefreshTokenError,
+  InvalidCredentialsError,
+  InvalidRefreshTokenError,
+  MissingRefreshTokenError,
+  RevokedRefreshTokenError,
+} from "./error/errors";
 
-// ─── Mock Factories ──────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// bcrypt mock – keeps tests fast & deterministic
+// ---------------------------------------------------------------------------
+vi.mock("bcrypt", () => ({
+  default: {
+    hash: vi.fn().mockResolvedValue("hashed-password"),
+    compare: vi.fn().mockResolvedValue(true),
+  },
+}));
 
-const sessionRepo = {
-  create: vi.fn(),
-  findById: vi.fn(),
-  findByTokenHash: vi.fn(),
-  findByUserId: vi.fn(),
-  update: vi.fn(),
-  delete: vi.fn(),
-  revoke: vi.fn(),
-  revokeByUserId: vi.fn(),
-};
+import bcrypt from "bcrypt";
 
-const userService = {
-  createUser: vi.fn(),
-  getByEmail: vi.fn(),
-  verifyPassword: vi.fn(),
-};
-
-const jwtUtil = {
-  generateAccessToken: vi.fn(),
-  generateRefreshToken: vi.fn(),
-  getRefreshTokenExpiry: vi.fn(),
-  hashToken: vi.fn(),
-  verifyAccessToken: vi.fn(),
-};
-
-const authService = new AuthService(
-  sessionRepo as any,
-  userService as any,
-  jwtUtil as any,
-);
-
-// ─── Shared Fixtures ─────────────────────────────────────────────────────────
-
-const client = {
+// ---------------------------------------------------------------------------
+// Shared fixtures
+// ---------------------------------------------------------------------------
+const mockClient: ClientInfoType = {
   deviceName: "Chrome",
   deviceType: "desktop",
   ipAddress: "127.0.0.1",
   userAgent: "Mozilla/5.0",
 };
 
-const user: User = {
+const now = new Date();
+
+const mockUser: User = {
   id: "user-1",
-  email: "peter@gmail.com",
-  passwordHash: "hashed_password",
+  email: "john@example.com",
+  passwordHash: "hashed-password",
+  firstName: "John",
+  lastName: "Doe",
+  avatarUrl: null,
+  dob: null,
+  gender: "MALE",
+  city: "Mumbai",
   isEmailVerified: false,
   isBanned: false,
   deletedAt: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  createdAt: now,
+  updatedAt: now,
 };
 
-const session: Session = {
+const mockSession: UserSession = {
   id: "session-1",
-  refreshTokenHash: "hashed_refresh_token",
-  deviceName: client.deviceName,
-  deviceType: client.deviceType,
-  ipAddress: client.ipAddress,
-  userAgent: client.userAgent,
-  expiresAt: addDays(new Date(), 30),
+  tokenHash: "hashed-refresh-token",
+  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days out
   revokedAt: null,
-  lastUsedAt: new Date(),
-  user: user,
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  deviceName: "Chrome",
+  deviceType: "desktop",
+  userAgent: "Mozilla/5.0",
+  ipAddress: "127.0.0.1",
+  createdAt: now,
+  updatedAt: now,
+  user: mockUser,
 };
 
-// ─── Helper: set up JWT + session mocks for createSession flow ───────────────
+// ---------------------------------------------------------------------------
+// Factory for mocked dependencies
+// ---------------------------------------------------------------------------
+function createMocks() {
+  const userRepo: Record<string, Mock> = {
+    findByEmail: vi.fn(),
+    create: vi.fn(),
+  };
 
-function setupCreateSessionMocks() {
-  jwtUtil.generateRefreshToken.mockReturnValue("raw_refresh_token");
-  jwtUtil.hashToken.mockReturnValue("hashed_refresh_token");
-  jwtUtil.getRefreshTokenExpiry.mockReturnValue(addDays(new Date(), 30));
-  jwtUtil.generateAccessToken.mockReturnValue("access_token");
-  sessionRepo.create.mockResolvedValue({ ...session });
+  const sessionRepo: Record<string, Mock> = {
+    create: vi.fn(),
+    findByTokenHash: vi.fn(),
+    update: vi.fn(),
+    revoke: vi.fn(),
+  };
+
+  const jwtUtil: Record<string, Mock> = {
+    generateRefreshToken: vi.fn().mockReturnValue("raw-refresh-token"),
+    hashToken: vi.fn().mockReturnValue("hashed-refresh-token"),
+    getRefreshTokenExpiry: vi.fn().mockReturnValue(new Date("2030-01-01")),
+    generateAccessToken: vi.fn().mockReturnValue("access-token-jwt"),
+  };
+
+  const authService = new (AuthService as any)(userRepo, sessionRepo, jwtUtil);
+
+  return {
+    authService: authService as AuthService,
+    userRepo: userRepo as unknown as UserRepository,
+    sessionRepo: sessionRepo as unknown as SessionRepository,
+    jwtUtil: jwtUtil as unknown as JWTUtil,
+  };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // SIGNUP
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+describe("Signup", () => {
+  it("should create a new user and return a session with tokens", async () => {
+    const { authService, userRepo, sessionRepo, jwtUtil } = createMocks();
+    (userRepo.findByEmail as Mock).mockResolvedValue(null);
+    (userRepo.create as Mock).mockResolvedValue(mockUser);
+    (sessionRepo.create as Mock).mockResolvedValue({ ...mockSession });
 
-describe("AuthService — signup", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  const input = { email: "peter@gmail.com", password: "Peter@1234", client };
-
-  it("should create a user and return a session with tokens", async () => {
-    userService.createUser.mockResolvedValue(user);
-    setupCreateSessionMocks();
-
-    const result = await authService.signup(input);
-
-    expect(userService.createUser).toHaveBeenCalledWith(input.email, input.password);
-    expect(sessionRepo.create).toHaveBeenCalledWith(user.id, {
-      refreshTokenHash: "hashed_refresh_token",
-      expiresAt: expect.any(Date),
-      deviceName: client.deviceName,
-      deviceType: client.deviceType,
-      ipAddress: client.ipAddress,
-      userAgent: client.userAgent,
+    const result = await authService.signup({
+      firstName: "John",
+      lastName: "Doe",
+      email: "john@example.com",
+      password: "password123",
+      city: "Mumbai",
+      gender: "MALE",
+      client: mockClient,
     });
-    expect(jwtUtil.generateAccessToken).toHaveBeenCalledWith({
-      sub: user.id,
-      sid: session.id,
-    });
-    expect(result.accessToken).toBe("access_token");
-    expect(result.refreshToken).toBe("raw_refresh_token");
-    expect(result.user).toEqual(user);
-  });
 
-  it("should propagate ConflictError when email already exists", async () => {
-    userService.createUser.mockRejectedValue(
-      new ConflictError("Email already exists", UserErrorCode.EMAIL_ALREADY_EXISTS),
+    // Repository calls
+    expect(userRepo.findByEmail).toHaveBeenCalledWith("john@example.com");
+    expect(bcrypt.hash).toHaveBeenCalledWith("password123", 10);
+    expect(userRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "john@example.com",
+        passwordHash: "hashed-password",
+        firstName: "John",
+        lastName: "Doe",
+        gender: "MALE",
+        city: "Mumbai",
+      }),
     );
 
-    await expect(authService.signup(input)).rejects.toThrow(ConflictError);
-    expect(sessionRepo.create).not.toHaveBeenCalled();
-    expect(jwtUtil.generateRefreshToken).not.toHaveBeenCalled();
-  });
+    // Session creation
+    expect(sessionRepo.create).toHaveBeenCalledWith(
+      mockUser.id,
+      expect.objectContaining({
+        tokenHash: "hashed-refresh-token",
+        deviceName: mockClient.deviceName,
+        deviceType: mockClient.deviceType,
+        ipAddress: mockClient.ipAddress,
+        userAgent: mockClient.userAgent,
+      }),
+    );
 
-  it("should propagate unexpected errors from userService", async () => {
-    userService.createUser.mockRejectedValue(new Error("DB connection lost"));
-
-    await expect(authService.signup(input)).rejects.toThrow("DB connection lost");
-    expect(sessionRepo.create).not.toHaveBeenCalled();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LOGIN
-// ═══════════════════════════════════════════════════════════════════════════════
-
-describe("AuthService — login", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  const input = { email: "peter@gmail.com", password: "Peter@1234", client };
-
-  it("should login successfully when no existing session", async () => {
-    userService.getByEmail.mockResolvedValue(user);
-    userService.verifyPassword.mockResolvedValue(true);
-    sessionRepo.findByUserId.mockResolvedValue(null);
-    setupCreateSessionMocks();
-
-    const result = await authService.login(input);
-
-    expect(userService.getByEmail).toHaveBeenCalledWith(input.email);
-    expect(userService.verifyPassword).toHaveBeenCalledWith(input.password, user.passwordHash);
-    expect(sessionRepo.findByUserId).toHaveBeenCalledWith(user.id);
-    expect(sessionRepo.delete).not.toHaveBeenCalled();
-    expect(sessionRepo.create).toHaveBeenCalledTimes(1);
-    expect(result.accessToken).toBe("access_token");
-    expect(result.refreshToken).toBe("raw_refresh_token");
-  });
-
-  it("should delete existing session and create a new one", async () => {
-    userService.getByEmail.mockResolvedValue(user);
-    userService.verifyPassword.mockResolvedValue(true);
-    sessionRepo.findByUserId.mockResolvedValue(session);
-    setupCreateSessionMocks();
-
-    const result = await authService.login(input);
-
-    expect(sessionRepo.delete).toHaveBeenCalledWith(session.id);
-    expect(sessionRepo.create).toHaveBeenCalledTimes(1);
-    expect(result.accessToken).toBe("access_token");
-    expect(result.refreshToken).toBe("raw_refresh_token");
-  });
-
-  it("should throw UnauthorizedError when user is not found", async () => {
-    userService.getByEmail.mockResolvedValue(null);
-
-    const error = await authService.login(input).catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
-    expect(sessionRepo.findByUserId).not.toHaveBeenCalled();
-    expect(sessionRepo.create).not.toHaveBeenCalled();
-  });
-
-  it("should throw UnauthorizedError when password is incorrect", async () => {
-    userService.getByEmail.mockResolvedValue(user);
-    userService.verifyPassword.mockResolvedValue(false);
-
-    const error = await authService.login(input).catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
-    expect(sessionRepo.findByUserId).not.toHaveBeenCalled();
-    expect(sessionRepo.create).not.toHaveBeenCalled();
-  });
-
-  it("should throw UnauthorizedError when user is banned", async () => {
-    userService.getByEmail.mockResolvedValue({ ...user, isBanned: true });
-    userService.verifyPassword.mockResolvedValue(true);
-
-    const error = await authService.login(input).catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
-    expect(sessionRepo.findByUserId).not.toHaveBeenCalled();
-    expect(sessionRepo.create).not.toHaveBeenCalled();
-  });
-
-  it("should throw UnauthorizedError when user is soft-deleted", async () => {
-    userService.getByEmail.mockResolvedValue({ ...user, deletedAt: new Date() });
-    userService.verifyPassword.mockResolvedValue(true);
-
-    const error = await authService.login(input).catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
-    expect(sessionRepo.findByUserId).not.toHaveBeenCalled();
-    expect(sessionRepo.create).not.toHaveBeenCalled();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// REFRESH SESSION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-describe("AuthService — refreshSession", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  const refreshInput = { token: "raw_refresh_token", client };
-
-  it("should rotate tokens and return updated session", async () => {
-    jwtUtil.hashToken.mockReturnValue("hashed_refresh_token");
-    sessionRepo.findByTokenHash.mockResolvedValue({ ...session });
-    jwtUtil.generateRefreshToken.mockReturnValue("new_raw_refresh_token");
-    jwtUtil.getRefreshTokenExpiry.mockReturnValue(addDays(new Date(), 30));
-    sessionRepo.update.mockResolvedValue({ ...session });
-    jwtUtil.generateAccessToken.mockReturnValue("new_access_token");
-
-    const result = await authService.refreshSession(refreshInput);
-
-    expect(jwtUtil.hashToken).toHaveBeenCalledWith("raw_refresh_token");
-    expect(sessionRepo.findByTokenHash).toHaveBeenCalledWith("hashed_refresh_token");
+    // Token generation
     expect(jwtUtil.generateRefreshToken).toHaveBeenCalled();
-    expect(sessionRepo.update).toHaveBeenCalledWith(session.id, {
-      refreshTokenHash: expect.any(String),
-      expiresAt: expect.any(Date),
-    });
     expect(jwtUtil.generateAccessToken).toHaveBeenCalledWith({
-      sub: user.id,
-      sid: session.id,
-    });
-    expect(result.accessToken).toBe("new_access_token");
-    expect(result.refreshToken).toBe("new_raw_refresh_token");
-  });
-
-  it("should throw MISSING_REFRESH_TOKEN when token is missing", async () => {
-    const error = await authService
-      .refreshSession({ token: undefined as any, client })
-      .catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.MISSING_REFRESH_TOKEN);
-    expect(sessionRepo.findByTokenHash).not.toHaveBeenCalled();
-  });
-
-  it("should throw MISSING_REFRESH_TOKEN when token is null", async () => {
-    const error = await authService
-      .refreshSession({ token: null, client })
-      .catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.MISSING_REFRESH_TOKEN);
-  });
-
-  it("should throw INVALID_REFRESH_TOKEN when session not found", async () => {
-    jwtUtil.hashToken.mockReturnValue("hashed_unknown");
-    sessionRepo.findByTokenHash.mockResolvedValue(null);
-
-    const error = await authService
-      .refreshSession(refreshInput)
-      .catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.INVALID_REFRESH_TOKEN);
-    expect(sessionRepo.update).not.toHaveBeenCalled();
-  });
-
-  it("should throw EXPIRED_REFRESH_TOKEN when token is expired", async () => {
-    jwtUtil.hashToken.mockReturnValue("hashed_refresh_token");
-    sessionRepo.findByTokenHash.mockResolvedValue({
-      ...session,
-      expiresAt: subHours(new Date(), 1),
+      sub: mockUser.id,
+      sid: mockSession.id,
     });
 
-    const error = await authService
-      .refreshSession(refreshInput)
-      .catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
-    expect(sessionRepo.update).not.toHaveBeenCalled();
+    // Returned session has both tokens
+    expect(result.accessToken).toBe("access-token-jwt");
+    expect(result.refreshToken).toBe("raw-refresh-token");
   });
 
-  it("should throw REVOKED_REFRESH_TOKEN when session is revoked", async () => {
-    jwtUtil.hashToken.mockReturnValue("hashed_refresh_token");
-    sessionRepo.findByTokenHash.mockResolvedValue({
-      ...session,
-      revokedAt: new Date(),
-    });
+  it("should throw EmailAlreadyExists when email is taken", async () => {
+    const { authService, userRepo } = createMocks();
+    (userRepo.findByEmail as Mock).mockResolvedValue(mockUser);
 
-    const error = await authService
-      .refreshSession(refreshInput)
-      .catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.REVOKED_REFRESH_TOKEN);
-    expect(sessionRepo.update).not.toHaveBeenCalled();
+    await expect(
+      authService.signup({
+        firstName: "John",
+        email: "john@example.com",
+        password: "password123",
+        city: "Mumbai",
+        gender: "MALE",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(EmailAlreadyExists);
   });
 
-  it("should throw INVALID_CREDENTIALS when user is banned", async () => {
-    jwtUtil.hashToken.mockReturnValue("hashed_refresh_token");
-    sessionRepo.findByTokenHash.mockResolvedValue({
-      ...session,
-      user: { ...user, isBanned: true },
+  it("should set nullable fields to null when not provided", async () => {
+    const { authService, userRepo, sessionRepo } = createMocks();
+    (userRepo.findByEmail as Mock).mockResolvedValue(null);
+    (userRepo.create as Mock).mockResolvedValue(mockUser);
+    (sessionRepo.create as Mock).mockResolvedValue({ ...mockSession });
+
+    await authService.signup({
+      firstName: "John",
+      email: "john@example.com",
+      password: "password123",
+      city: "Mumbai",
+      gender: "MALE",
+      client: mockClient,
+      // lastName, avatarUrl, dob intentionally omitted
     });
 
-    const error = await authService
-      .refreshSession(refreshInput)
-      .catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
-    expect(sessionRepo.update).not.toHaveBeenCalled();
-  });
-
-  it("should throw INVALID_CREDENTIALS when user is soft-deleted", async () => {
-    jwtUtil.hashToken.mockReturnValue("hashed_refresh_token");
-    sessionRepo.findByTokenHash.mockResolvedValue({
-      ...session,
-      user: { ...user, deletedAt: new Date() },
-    });
-
-    const error = await authService
-      .refreshSession(refreshInput)
-      .catch((e) => e);
-
-    expect(error).toBeInstanceOf(UnauthorizedError);
-    expect(error.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
-    expect(sessionRepo.update).not.toHaveBeenCalled();
+    expect(userRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lastName: null,
+        avatarUrl: null,
+        dob: null,
+      }),
+    );
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// LOGOUT
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// LOGIN
+// ===========================================================================
+describe("Login", () => {
+  it("should login with valid credentials and return a session", async () => {
+    const { authService, userRepo, sessionRepo, jwtUtil } = createMocks();
+    (userRepo.findByEmail as Mock).mockResolvedValue(mockUser);
+    (bcrypt.compare as Mock).mockResolvedValue(true);
+    (sessionRepo.create as Mock).mockResolvedValue({ ...mockSession });
 
-describe("AuthService — logout", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+    const result = await authService.login({
+      email: "john@example.com",
+      password: "password123",
+      client: mockClient,
+    });
+
+    expect(userRepo.findByEmail).toHaveBeenCalledWith("john@example.com");
+    expect(bcrypt.compare).toHaveBeenCalledWith(
+      "password123",
+      mockUser.passwordHash,
+    );
+    expect(sessionRepo.create).toHaveBeenCalled();
+    expect(jwtUtil.generateAccessToken).toHaveBeenCalled();
+    expect(result.accessToken).toBe("access-token-jwt");
+    expect(result.refreshToken).toBe("raw-refresh-token");
   });
 
+  it("should throw InvalidCredentialsError when user is not found", async () => {
+    const { authService, userRepo } = createMocks();
+    (userRepo.findByEmail as Mock).mockResolvedValue(null);
+
+    await expect(
+      authService.login({
+        email: "unknown@example.com",
+        password: "password123",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(InvalidCredentialsError);
+  });
+
+  it("should throw InvalidCredentialsError when password is wrong", async () => {
+    const { authService, userRepo } = createMocks();
+    (userRepo.findByEmail as Mock).mockResolvedValue(mockUser);
+    (bcrypt.compare as Mock).mockResolvedValue(false);
+
+    await expect(
+      authService.login({
+        email: "john@example.com",
+        password: "wrong-password",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(InvalidCredentialsError);
+  });
+
+  it("should throw InvalidCredentialsError when user is banned", async () => {
+    const { authService, userRepo } = createMocks();
+    const bannedUser = { ...mockUser, isBanned: true };
+    (userRepo.findByEmail as Mock).mockResolvedValue(bannedUser);
+    (bcrypt.compare as Mock).mockResolvedValue(true);
+
+    await expect(
+      authService.login({
+        email: "john@example.com",
+        password: "password123",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(InvalidCredentialsError);
+  });
+
+  it("should throw InvalidCredentialsError when user is soft-deleted", async () => {
+    const { authService, userRepo } = createMocks();
+    const deletedUser = { ...mockUser, deletedAt: new Date() };
+    (userRepo.findByEmail as Mock).mockResolvedValue(deletedUser);
+    (bcrypt.compare as Mock).mockResolvedValue(true);
+
+    await expect(
+      authService.login({
+        email: "john@example.com",
+        password: "password123",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(InvalidCredentialsError);
+  });
+});
+
+// ===========================================================================
+// REFRESH SESSION
+// ===========================================================================
+describe("Refresh Session", () => {
+  it("should refresh the session and return new tokens", async () => {
+    const { authService, sessionRepo, jwtUtil } = createMocks();
+    const existingSession = { ...mockSession };
+    (sessionRepo.findByTokenHash as Mock).mockResolvedValue(existingSession);
+    (sessionRepo.update as Mock).mockResolvedValue({ ...existingSession });
+
+    const result = await authService.refreshSession({
+      token: "old-refresh-token",
+      client: mockClient,
+    });
+
+    // Token hashing for lookup
+    expect(jwtUtil.hashToken).toHaveBeenCalledWith("old-refresh-token");
+
+    // Session update with rotated token
+    expect(sessionRepo.update).toHaveBeenCalledWith(
+      mockSession.id,
+      expect.objectContaining({
+        tokenHash: "hashed-refresh-token",
+      }),
+    );
+
+    // New access token
+    expect(jwtUtil.generateAccessToken).toHaveBeenCalledWith({
+      sub: mockUser.id,
+      sid: mockSession.id,
+    });
+
+    expect(result.accessToken).toBe("access-token-jwt");
+    expect(result.refreshToken).toBe("raw-refresh-token");
+  });
+
+  it("should throw MissingRefreshTokenError when token is falsy", async () => {
+    const { authService } = createMocks();
+
+    await expect(
+      authService.refreshSession({ client: mockClient }),
+    ).rejects.toThrow(MissingRefreshTokenError);
+
+    await expect(
+      authService.refreshSession({ token: null, client: mockClient }),
+    ).rejects.toThrow(MissingRefreshTokenError);
+
+    await expect(
+      authService.refreshSession({ token: "", client: mockClient }),
+    ).rejects.toThrow(MissingRefreshTokenError);
+  });
+
+  it("should throw InvalidRefreshTokenError when session is not found", async () => {
+    const { authService, sessionRepo } = createMocks();
+    (sessionRepo.findByTokenHash as Mock).mockResolvedValue(null);
+
+    await expect(
+      authService.refreshSession({
+        token: "nonexistent-token",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(InvalidRefreshTokenError);
+  });
+
+  it("should throw ExpiredRefreshTokenError when session is expired", async () => {
+    const { authService, sessionRepo } = createMocks();
+    const expiredSession = {
+      ...mockSession,
+      expiresAt: new Date("2000-01-01"), // well in the past
+    };
+    (sessionRepo.findByTokenHash as Mock).mockResolvedValue(expiredSession);
+
+    await expect(
+      authService.refreshSession({
+        token: "expired-token",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(ExpiredRefreshTokenError);
+  });
+
+  it("should throw RevokedRefreshTokenError when session is revoked", async () => {
+    const { authService, sessionRepo } = createMocks();
+    const revokedSession = {
+      ...mockSession,
+      revokedAt: new Date(),
+    };
+    (sessionRepo.findByTokenHash as Mock).mockResolvedValue(revokedSession);
+
+    await expect(
+      authService.refreshSession({
+        token: "revoked-token",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(RevokedRefreshTokenError);
+  });
+
+  it("should throw InvalidCredentialsError when user is soft-deleted", async () => {
+    const { authService, sessionRepo } = createMocks();
+    const sessionWithDeletedUser = {
+      ...mockSession,
+      user: { ...mockUser, deletedAt: new Date() },
+    };
+    (sessionRepo.findByTokenHash as Mock).mockResolvedValue(
+      sessionWithDeletedUser,
+    );
+
+    await expect(
+      authService.refreshSession({
+        token: "some-token",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(InvalidCredentialsError);
+  });
+
+  it("should throw InvalidCredentialsError when user is banned", async () => {
+    const { authService, sessionRepo } = createMocks();
+    const sessionWithBannedUser = {
+      ...mockSession,
+      user: { ...mockUser, isBanned: true },
+    };
+    (sessionRepo.findByTokenHash as Mock).mockResolvedValue(
+      sessionWithBannedUser,
+    );
+
+    await expect(
+      authService.refreshSession({
+        token: "some-token",
+        client: mockClient,
+      }),
+    ).rejects.toThrow(InvalidCredentialsError);
+  });
+});
+
+// ===========================================================================
+// LOGOUT
+// ===========================================================================
+describe("Logout", () => {
   it("should revoke the session by id", async () => {
-    sessionRepo.revoke.mockResolvedValue(undefined);
+    const { authService, sessionRepo } = createMocks();
+    (sessionRepo.revoke as Mock).mockResolvedValue(undefined);
 
     await authService.logout("session-1");
 
     expect(sessionRepo.revoke).toHaveBeenCalledWith("session-1");
-    expect(sessionRepo.revoke).toHaveBeenCalledTimes(1);
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LOGOUT ALL
-// ═══════════════════════════════════════════════════════════════════════════════
-
-describe("AuthService — logoutAll", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
   });
 
-  it("should revoke all sessions for the user", async () => {
-    sessionRepo.revokeByUserId.mockResolvedValue(undefined);
+  it("should propagate errors from sessionRepo.revoke", async () => {
+    const { authService, sessionRepo } = createMocks();
+    (sessionRepo.revoke as Mock).mockRejectedValue(new Error("DB error"));
 
-    await authService.logoutAll("user-1");
-
-    expect(sessionRepo.revokeByUserId).toHaveBeenCalledWith("user-1");
-    expect(sessionRepo.revokeByUserId).toHaveBeenCalledTimes(1);
+    await expect(authService.logout("session-1")).rejects.toThrow("DB error");
   });
 });

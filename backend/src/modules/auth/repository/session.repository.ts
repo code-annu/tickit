@@ -1,49 +1,61 @@
-import { Prisma } from "@/generated/prisma";
-import { injectable } from "inversify";
-import { Session } from "../entity/session.entity";
+import { inject, injectable } from "inversify";
+import { UserSession } from "../entity/session.entity";
 import { prisma } from "@/core/prisma/prisma.client";
+import TYPES from "@/core/di/inversify.types";
+import AuthMapper from "../mapper/auth.mapper";
+import { Prisma } from "@/generated/prisma/client";
 
 @injectable()
 export default class SessionRepository {
-  constructor(private readonly db = prisma) {}
+  private readonly db = prisma;
+  constructor(@inject(TYPES.AuthMapper) private readonly mapper: AuthMapper) {}
 
   async create(
     userId: string,
     data: Prisma.SessionCreateWithoutUserInput,
-  ): Promise<Session> {
-    return this.db.session.create({
+  ): Promise<UserSession> {
+    const session = await this.db.session.create({
       data: { ...data, userId },
       include: { user: true },
     });
+
+    return this.mapper.toSessionEntity(session);
   }
 
-  async findById(id: string): Promise<Session | null> {
-    return this.db.session.findUnique({
+  async findById(id: string): Promise<UserSession | null> {
+    const session = await this.db.session.findUnique({
       where: { id },
       include: { user: true },
     });
+    return session ? this.mapper.toSessionEntity(session) : null;
   }
 
-  async findByTokenHash(refreshTokenHash: string): Promise<Session | null> {
-    return this.db.session.findUnique({
-      where: { refreshTokenHash },
+  async findByTokenHash(refreshTokenHash: string): Promise<UserSession | null> {
+    const session = await this.db.session.findUnique({
+      where: { tokenHash: refreshTokenHash },
       include: { user: true },
     });
+    return session ? this.mapper.toSessionEntity(session) : null;
   }
 
-  async findByUserId(userId: string): Promise<Session | null> {
-    return this.db.session.findUnique({
+  async findByUserId(userId: string): Promise<UserSession | null> {
+    const session = await this.db.session.findUnique({
       where: { userId },
       include: { user: true },
     });
+    return session ? this.mapper.toSessionEntity(session) : null;
   }
 
-  async update(id: string, data: Prisma.SessionUpdateInput): Promise<Session> {
-    return this.db.session.update({
+  async update(
+    id: string,
+    data: Prisma.SessionUpdateInput,
+  ): Promise<UserSession> {
+    const session = await this.db.session.update({
       where: { id },
       data,
       include: { user: true },
     });
+    return this.mapper.toSessionEntity(session);
   }
 
   async revoke(id: string) {

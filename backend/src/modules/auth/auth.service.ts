@@ -1,98 +1,95 @@
-import { inject, injectable } from "inversify";
-import SessionRepository from "./repository/session.repository";
-import UserService from "@/shared/user/user.service";
-import { Session } from "./entity/session.entity";
-import { SignupDto } from "./dto/signup.dto";
-import { User } from "@/shared/user/entity/user.entity";
-import { ClientInfoType } from "@/shared/util/client-info.util";
-import JWTUtil from "@/shared/util/jwt.util";
-import AuthErrorCode from "./AuthErrorCode";
-import { LoginDto } from "./dto/login.dto";
-import { RefreshSessionDto } from "./dto/refresh-session.dto";
 import TYPES from "@/core/di/inversify.types";
-import UnauthorizedError from "@/core/error/types/UnAuthorizedError";
+import { inject, injectable } from "inversify";
+import UserRepository from "./repository/user.repository";
+import SessionRepository from "./repository/session.repository";
+import { LoginDto } from "./dto/login.dto";
+import { SignupDto } from "./dto/signup.dt";
+import { User } from "./entity/user.entity";
+import { ClientInfoType } from "@/shared/util/client-info.util";
+import { UserSession } from "./entity/session.entity";
+import JWTUtil from "@/shared/util/jwt.util";
+import {
+  EmailAlreadyExists,
+  ExpiredRefreshTokenError,
+  InvalidCredentialsError,
+  InvalidRefreshTokenError,
+  MissingRefreshTokenError,
+  RevokedRefreshTokenError,
+} from "./error/errors";
+import bcrypt from "bcrypt";
+import { RefreshSessionDto } from "./dto/refresh-session.dto";
 
 @injectable()
 export default class AuthService {
   constructor(
+    @inject(TYPES.UserRepository) private readonly userRepo: UserRepository,
     @inject(TYPES.SessionRepository)
     private readonly sessionRepo: SessionRepository,
-    @inject(TYPES.UserService) private readonly userService: UserService,
     @inject(TYPES.JWTUtil) private readonly jwtUtil: JWTUtil,
   ) {}
 
-  async signup(input: SignupDto): Promise<Session> {
-    const { email, password, client } = input;
-    const user = await this.userService.createUser(email, password);
+  async signup(input: SignupDto) {
+    const { client, ...rest } = input;
+
+    const existingUser = await this.userRepo.findByEmail(rest.email);
+    if (existingUser) {
+      throw new EmailAlreadyExists("Email already exists");
+    }
+
+    const passwordHash = await bcrypt.hash(rest.password, 10);
+    const user = await this.userRepo.create({
+      email: rest.email,
+      passwordHash,
+      firstName: rest.firstName,
+      lastName: rest.lastName ?? null,
+      gender: rest.gender,
+      city: rest.city,
+      avatarUrl: rest.avatarUrl ?? null,
+      dob: rest.dob ?? null,
+    });
 
     return this.createSession(user, client);
   }
 
-  async login(input: LoginDto): Promise<Session> {
-    const { email, password } = input;
+  async login(input: LoginDto) {
+    const { client, email, password } = input;
+    const user = await this.userRepo.findByEmail(email);
 
-    const user = await this.userService.getByEmail(email);
-    if (
-      !user ||
-      !(await this.userService.verifyPassword(password, user.passwordHash)) ||
-      user.deletedAt ||
-      user.isBanned
-    ) {
-      throw new UnauthorizedError(
-        "Invalid email or password",
-        AuthErrorCode.INVALID_CREDENTIALS,
-      );
+    if (!user) {
+      throw new InvalidCredentialsError("Invalid auth credentials");
     }
-    let newSession: Session;
-
-    const existingSession = await this.sessionRepo.findByUserId(user.id);
-    if (existingSession) {
-      await this.sessionRepo.delete(existingSession.id);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid || user.isBanned || user.deletedAt) {
+      throw new InvalidCredentialsError("Invalid auth credentials");
     }
-    newSession = await this.createSession(user, input.client);
 
-    return newSession;
+    return this.createSession(user, client);
   }
 
-  async refreshSession(input: RefreshSessionDto): Promise<Session> {
-    const token = input.token;
+  async refreshSession(input: RefreshSessionDto) {
+    const { client, token } = input;
     if (!token) {
-      throw new UnauthorizedError(
-        "Refresh token is missing",
-        AuthErrorCode.MISSING_REFRESH_TOKEN,
-      );
+      throw new MissingRefreshTokenError("Refresh token is missing");
     }
 
     const tokenHash = this.jwtUtil.hashToken(token);
     const session = await this.sessionRepo.findByTokenHash(tokenHash);
     if (!session) {
-      throw new UnauthorizedError(
-        "Refresh token is invalid",
-        AuthErrorCode.INVALID_REFRESH_TOKEN,
-      );
+      throw new InvalidRefreshTokenError("Refresh token is invalid");
     }
     if (session.expiresAt < new Date()) {
-      throw new UnauthorizedError(
-        "Refresh token is expired",
-        AuthErrorCode.EXPIRED_REFRESH_TOKEN,
-      );
+      throw new ExpiredRefreshTokenError("Refresh token is expired");
     }
     if (session.revokedAt) {
-      throw new UnauthorizedError(
-        "Refresh token is revoked",
-        AuthErrorCode.REVOKED_REFRESH_TOKEN,
-      );
+      throw new RevokedRefreshTokenError("Refresh token is revoked");
     }
     if (session.user.deletedAt || session.user.isBanned) {
-      throw new UnauthorizedError(
-        "Invalid user credentials",
-        AuthErrorCode.INVALID_CREDENTIALS,
-      );
+      throw new InvalidCredentialsError("Invalid user credentials");
     }
 
     const refreshToken = this.jwtUtil.generateRefreshToken();
     const updatedSession = await this.sessionRepo.update(session.id, {
-      refreshTokenHash: this.jwtUtil.hashToken(refreshToken),
+      tokenHash: this.jwtUtil.hashToken(refreshToken),
       expiresAt: this.jwtUtil.getRefreshTokenExpiry(),
     });
 
@@ -100,6 +97,7 @@ export default class AuthService {
       sub: updatedSession.user.id,
       sid: updatedSession.id,
     });
+
     updatedSession.refreshToken = refreshToken;
     updatedSession.accessToken = accessToken;
 
@@ -110,18 +108,14 @@ export default class AuthService {
     await this.sessionRepo.revoke(sessionId);
   }
 
-  async logoutAll(userId: string): Promise<void> {
-    await this.sessionRepo.revokeByUserId(userId);
-  }
-
   // Private methods
   private async createSession(
     user: User,
     client: ClientInfoType,
-  ): Promise<Session> {
+  ): Promise<UserSession> {
     const refreshToken = this.jwtUtil.generateRefreshToken();
     const session = await this.sessionRepo.create(user.id, {
-      refreshTokenHash: this.jwtUtil.hashToken(refreshToken),
+      tokenHash: this.jwtUtil.hashToken(refreshToken),
       expiresAt: this.jwtUtil.getRefreshTokenExpiry(),
       deviceName: client.deviceName,
       deviceType: client.deviceType,
