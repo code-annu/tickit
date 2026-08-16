@@ -43,10 +43,10 @@ describe("POST /api/auth/refresh", () => {
         .send({ token: tokenValue })
         .expect(200);
 
-      expect(res.body).toHaveProperty("user");
-      expect(res.body).toHaveProperty("session");
-      expect(res.body.session).toHaveProperty("accessToken");
-      expect(res.body.user.email).toBe(authUser.user.email);
+      expect(res.body.data).toHaveProperty("user");
+      expect(res.body.data).toHaveProperty("session");
+      expect(res.body.data.session).toHaveProperty("accessToken");
+      expect(res.body.data.user.email).toBe(authUser.user.email);
 
       // New refresh cookie should be set
       const newCookie = extractRefreshCookie(res.headers["set-cookie"]);
@@ -85,7 +85,7 @@ describe("POST /api/auth/refresh", () => {
         .send({ token: tokenValue })
         .expect(200);
 
-      expect(res.body.session.accessToken).not.toBe(
+      expect(res.body.data.session.accessToken).not.toBe(
         authUser.session.accessToken,
       );
     });

@@ -27,15 +27,15 @@ describe("POST /api/auth/signup", () => {
       const res = await request(app).post(API).send(validPayload).expect(201);
 
       // Response body shape
-      expect(res.body).toHaveProperty("user");
-      expect(res.body).toHaveProperty("session");
-      expect(res.body.user).toMatchObject({
+      expect(res.body.data).toHaveProperty("user");
+      expect(res.body.data).toHaveProperty("session");
+      expect(res.body.data.user).toMatchObject({
         email: validPayload.email,
         isEmailVerified: false,
       });
-      expect(res.body.user).toHaveProperty("id");
-      expect(res.body.session).toHaveProperty("id");
-      expect(res.body.session).toHaveProperty("accessToken");
+      expect(res.body.data.user).toHaveProperty("id");
+      expect(res.body.data.session).toHaveProperty("id");
+      expect(res.body.data.session).toHaveProperty("accessToken");
 
       // Refresh token cookie
       const cookies = res.headers["set-cookie"];
@@ -60,7 +60,9 @@ describe("POST /api/auth/signup", () => {
     it("should persist a session record in the database", async () => {
       const res = await request(app).post(API).send(validPayload).expect(201);
 
-      const sessions = await SessionFactory.findManyByUserId(res.body.user.id);
+      const sessions = await SessionFactory.findManyByUserId(
+        res.body.data.user.id,
+      );
       expect(sessions).toHaveLength(1);
     });
 
@@ -75,7 +77,7 @@ describe("POST /api/auth/signup", () => {
         })
         .expect(201);
 
-      expect(res.body.user).toHaveProperty("id");
+      expect(res.body.data.user).toHaveProperty("id");
     });
 
     it("should accept a valid dob and avatarUrl", async () => {
@@ -89,7 +91,7 @@ describe("POST /api/auth/signup", () => {
         })
         .expect(201);
 
-      expect(res.body.user).toHaveProperty("id");
+      expect(res.body.data.user).toHaveProperty("id");
     });
   });
 

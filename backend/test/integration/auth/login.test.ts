@@ -25,12 +25,12 @@ describe("POST /api/auth/login", () => {
         .expect(200);
 
       // Response shape
-      expect(res.body).toHaveProperty("user");
-      expect(res.body).toHaveProperty("session");
-      expect(res.body.user.email).toBe(TEST_EMAIL);
-      expect(res.body.user).toHaveProperty("id");
-      expect(res.body.session).toHaveProperty("id");
-      expect(res.body.session).toHaveProperty("accessToken");
+      expect(res.body.data).toHaveProperty("user");
+      expect(res.body.data).toHaveProperty("session");
+      expect(res.body.data.user.email).toBe(TEST_EMAIL);
+      expect(res.body.data.user).toHaveProperty("id");
+      expect(res.body.data.session).toHaveProperty("id");
+      expect(res.body.data.session).toHaveProperty("accessToken");
 
       // Refresh token cookie
       const cookies = res.headers["set-cookie"];
@@ -52,7 +52,7 @@ describe("POST /api/auth/login", () => {
 
       const sessions = await SessionFactory.findManyByUserId(user.id);
       expect(sessions).toHaveLength(1);
-      expect(sessions[0].id).toBe(res.body.session.id);
+      expect(sessions[0].id).toBe(res.body.data.session.id);
     });
 
     it("should replace existing session on re-login", async () => {
@@ -72,8 +72,8 @@ describe("POST /api/auth/login", () => {
 
       const sessions = await SessionFactory.findManyByUserId(user.id);
       expect(sessions).toHaveLength(1);
-      expect(sessions[0].id).toBe(second.body.session.id);
-      expect(sessions[0].id).not.toBe(first.body.session.id);
+      expect(sessions[0].id).toBe(second.body.data.session.id);
+      expect(sessions[0].id).not.toBe(first.body.data.session.id);
     });
   });
 
