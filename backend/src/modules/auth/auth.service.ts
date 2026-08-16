@@ -3,7 +3,7 @@ import { inject, injectable } from "inversify";
 import UserRepository from "./repository/user.repository";
 import SessionRepository from "./repository/session.repository";
 import { LoginDto } from "./dto/login.dto";
-import { SignupDto } from "./dto/signup.dt";
+import { SignupDto } from "./dto/signup.dto";
 import { User } from "./entity/user.entity";
 import { ClientInfoType } from "@/shared/util/client-info.util";
 import { UserSession } from "./entity/session.entity";

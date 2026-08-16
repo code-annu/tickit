@@ -26,19 +26,23 @@ const TYPES = {
   MovieRepository: Symbol.for("MovieRepository"),
   MovieShowRepository: Symbol.for("MovieShowRepository"),
   MovieService: Symbol.for("MovieService"),
+  MovieResponse: Symbol.for("MovieResponse"),
   MovieController: Symbol.for("MovieController"),
   MovieRouter: Symbol.for("MovieRouter"),
 
   // Theater types
+  TheaterMapper: Symbol.for("TheaterMapper"),
   TheaterShowMapper: Symbol.for("TheaterShowMapper"),
   TheaterRepository: Symbol.for("TheaterRepository"),
   TheaterShowRepository: Symbol.for("TheaterShowRepository"),
   TheaterService: Symbol.for("TheaterService"),
+  TheaterResponse: Symbol.for("TheaterResponse"),
   TheaterController: Symbol.for("TheaterController"),
   TheaterRouter: Symbol.for("TheaterRouter"),
 
   // Show types
   ShowMapper: Symbol.for("ShowMapper"),
+  SeatHoldRepository: Symbol.for("SeatHoldRepository"),
   ShowRepository: Symbol.for("ShowRepository"),
   ShowService: Symbol.for("ShowService"),
   ShowResponse: Symbol.for("ShowResponse"),

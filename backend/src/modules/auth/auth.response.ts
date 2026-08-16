@@ -6,13 +6,15 @@ export default class AuthResponse {
   buildAuthResponse(session: UserSession) {
     const { user, accessToken, id } = session;
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-        isEmailVerified: user.isEmailVerified,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          isEmailVerified: user.isEmailVerified,
+        },
+        session: { id, accessToken },
       },
-      session: { id, accessToken },
     };
   }
 }
