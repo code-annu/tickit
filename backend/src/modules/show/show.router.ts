@@ -5,8 +5,6 @@ import ShowController from "./show.controller";
 import { validateRequest } from "@/shared/middleware/validate-request.middleware";
 import { GetShowDetailsSchema } from "./schema/GetShowDetailsSchema";
 import { GetShowSeatMapSchema } from "./schema/GetShowSeatMapSchema";
-import { HoldShowSeatsSchema } from "./schema/HoldShowSeatsSchema";
-import authenticateUser from "@/shared/middleware/authenticate.middleware";
 
 @injectable()
 export default class ShowRouter {
@@ -32,13 +30,5 @@ export default class ShowRouter {
       validateRequest(GetShowSeatMapSchema),
       this.controller.getShowSeatMap,
     );
-
-    this.router.post(
-      "/:id/hold-seats",
-      authenticateUser,
-      validateRequest(HoldShowSeatsSchema),
-      this.controller.holdShowSeats,
-    );
   }
 }
-

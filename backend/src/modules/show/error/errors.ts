@@ -11,13 +11,3 @@ export class ShowNotFoundError extends AppError {
     });
   }
 }
-
-export class SeatHoldError extends AppError {
-  constructor(message: string) {
-    super({
-      message,
-      statusCode: StatusCode.Error.BAD_REQUEST,
-      code: ShowErrorCode.SEAT_HOLD_ERROR,
-    });
-  }
-}

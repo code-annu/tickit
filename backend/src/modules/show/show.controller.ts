@@ -5,7 +5,6 @@ import ShowService from "./show.service";
 import ShowResponse from "./show.response";
 import StatusCode from "@/core/error/StatusCode";
 import catchAsync from "@/core/error/async.catch";
-import { AuthRequest } from "@/shared/middleware/authenticate.middleware";
 
 @injectable()
 export default class ShowController {
@@ -29,19 +28,4 @@ export default class ShowController {
     const response = this.showResponse.buildShowSeatMapResponse(seatMap);
     res.status(StatusCode.Success.OK).json(response);
   });
-
-  public holdShowSeats = catchAsync(
-    async (req: AuthRequest, res: Response) => {
-      const userId = req.auth!.sub;
-      const showId = req.params.id!.toString();
-      const { showSeatIds } = req.body;
-
-      const seatHold = await this.service.holdShowSeats(userId, {
-        showId,
-        showSeatIds,
-      });
-      const response = this.showResponse.buildHoldShowSeatsResponse(seatHold);
-      res.status(StatusCode.Success.OK).json(response);
-    },
-  );
 }

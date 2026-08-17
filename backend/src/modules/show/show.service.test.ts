@@ -1,20 +1,9 @@
 import { describe, expect, it, vi, type Mock } from "vitest";
 import ShowService from "./show.service";
 import type ShowRepository from "./repository/show.repository";
-import type SeatHoldRepository from "./repository/seat-hold.repository";
 import type { Show } from "./entity/show.entity";
 import type { ShowSeatInventory } from "./entity/show-seat-inventory.entity";
-import type { SeatHold } from "./entity/seat-hold.entity";
-import { SeatHoldError, ShowNotFoundError } from "./error/errors";
-
-// ---------------------------------------------------------------------------
-// Mock prisma.$transaction so it just runs the callback with `tx`
-// ---------------------------------------------------------------------------
-vi.mock("@/core/prisma/prisma.client", () => ({
-  prisma: {
-    $transaction: vi.fn((cb: (tx: any) => any) => cb({})),
-  },
-}));
+import { ShowNotFoundError } from "./error/errors";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -56,13 +45,6 @@ const mockSeatInventory: ShowSeatInventory = {
   ],
 };
 
-const mockSeatHold: SeatHold = {
-  id: "hold-1",
-  showId: "show-1",
-  status: "ACTIVE",
-  expiresAt: new Date("2026-08-15T10:08:00Z"),
-};
-
 // ---------------------------------------------------------------------------
 // Factory for mocked dependencies
 // ---------------------------------------------------------------------------
@@ -72,18 +54,11 @@ function createMocks() {
     findSeatInventoryByShowId: vi.fn(),
   };
 
-  const seatHoldRepo: Record<string, Mock> = {
-    lockAndHoldSeats: vi.fn(),
-    createHold: vi.fn(),
-    createHoldItems: vi.fn(),
-  };
-
-  const showService = new (ShowService as any)(showRepo, seatHoldRepo);
+  const showService = new (ShowService as any)(showRepo);
 
   return {
     showService: showService as ShowService,
     showRepo: showRepo as unknown as ShowRepository,
-    seatHoldRepo: seatHoldRepo as unknown as SeatHoldRepository,
   };
 }
 
@@ -177,83 +152,6 @@ describe("getShowSeatMap", () => {
 
     await expect(showService.getShowSeatMap("show-1")).rejects.toThrow(
       "DB error",
-    );
-  });
-});
-
-// ===========================================================================
-// HOLD SHOW SEATS
-// ===========================================================================
-describe("holdShowSeats", () => {
-  const userId = "user-1";
-  const showSeatIds = ["seat-uuid-aaa", "seat-uuid-bbb"];
-  const holdInput = { showId: "show-1", showSeatIds };
-
-  it("should throw ShowNotFoundError when show does not exist", async () => {
-    const { showService, showRepo, seatHoldRepo } = createMocks();
-    (showRepo.findById as Mock).mockResolvedValue(null);
-
-    await expect(showService.holdShowSeats(userId, holdInput)).rejects.toThrow(
-      ShowNotFoundError,
-    );
-
-    expect(showRepo.findById).toHaveBeenCalledWith("show-1");
-    expect(seatHoldRepo.lockAndHoldSeats).not.toHaveBeenCalled();
-  });
-
-  it("should throw SeatHoldError when seats cannot be held (count mismatch)", async () => {
-    const { showService, showRepo, seatHoldRepo } = createMocks();
-    (showRepo.findById as Mock).mockResolvedValue(mockShow);
-    // Only 1 of 2 seats was lockable
-    (seatHoldRepo.lockAndHoldSeats as Mock).mockResolvedValue(1);
-
-    await expect(showService.holdShowSeats(userId, holdInput)).rejects.toThrow(
-      SeatHoldError,
-    );
-
-    expect(seatHoldRepo.lockAndHoldSeats).toHaveBeenCalled();
-    expect(seatHoldRepo.createHold).not.toHaveBeenCalled();
-  });
-
-  it("should return SeatHold on successful hold", async () => {
-    const { showService, showRepo, seatHoldRepo } = createMocks();
-    (showRepo.findById as Mock).mockResolvedValue(mockShow);
-    (seatHoldRepo.lockAndHoldSeats as Mock).mockResolvedValue(
-      showSeatIds.length,
-    );
-    (seatHoldRepo.createHold as Mock).mockResolvedValue(mockSeatHold);
-    (seatHoldRepo.createHoldItems as Mock).mockResolvedValue({ count: 2 });
-
-    const result = await showService.holdShowSeats(userId, holdInput);
-
-    expect(result).toEqual(mockSeatHold);
-    expect(seatHoldRepo.lockAndHoldSeats).toHaveBeenCalled();
-    expect(seatHoldRepo.createHold).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        userId,
-        showId: "show-1",
-        expiresAt: expect.any(Date),
-      }),
-    );
-    expect(seatHoldRepo.createHoldItems).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        holdId: mockSeatHold.id,
-        showSeatIds,
-      }),
-    );
-  });
-
-  it("should propagate errors from seatHoldRepo.lockAndHoldSeats", async () => {
-    const { showService, showRepo, seatHoldRepo } = createMocks();
-    (showRepo.findById as Mock).mockResolvedValue(mockShow);
-    (seatHoldRepo.lockAndHoldSeats as Mock).mockRejectedValue(
-      new Error("DB lock error"),
-    );
-
-    await expect(showService.holdShowSeats(userId, holdInput)).rejects.toThrow(
-      "DB lock error",
     );
   });
 });

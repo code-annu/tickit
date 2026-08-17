@@ -4,12 +4,10 @@ import {
   Theater as PrismaTheater,
   ShowSeat as PrismShowSeat,
   Seat as PrismaSeat,
-  SeatHold as PrismaSeatHold,
 } from "@/generated/prisma/client";
 import { injectable } from "inversify";
 import { Show } from "./entity/show.entity";
 import { ShowSeatInventory } from "./entity/show-seat-inventory.entity";
-import { SeatHold, SeatHoldStatus } from "./entity/seat-hold.entity";
 
 type ShowWithRelations = PrismShow & {
   movie: PrismaMovie;
@@ -48,15 +46,6 @@ export default class ShowMapper {
         status: showSeat.status,
         price: showSeat.price.toNumber(),
       })),
-    };
-  }
-
-  toSeatHoldEntity(seatHold: PrismaSeatHold): SeatHold {
-    return {
-      id: seatHold.id,
-      showId: seatHold.showId,
-      status: seatHold.status as SeatHoldStatus,
-      expiresAt: seatHold.expiresAt,
     };
   }
 }
