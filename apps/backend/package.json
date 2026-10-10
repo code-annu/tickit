@@ -4,7 +4,7 @@
   "private": "true",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev":"tsx --watch src/server.ts"
+    "dev": "tsx --watch src/server.ts"
   },
   "keywords": [],
   "author": "",
@@ -12,10 +12,12 @@
   "type": "module",
   "dependencies": {
     "@tickit/config": "workspace:*",
+    "@tickit/database": "workspace:*",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "date-fns": "^4.4.0",
     "express": "^5.2.1",
+    "google-auth-library": "^11.2.0",
     "inversify": "^8.2.3",
     "reflect-metadata": "^0.2.2",
     "ua-parser-js": "^2.0.10",

@@ -13,8 +13,14 @@
   "license": "ISC",
   "type": "module",
   "exports": {
-    "types": "./dist/server/index.d.ts",
-    "import": "./dist/server/index.js"
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
+    }
   },
   "dependencies": {
     "dotenv": "^18.0.6",

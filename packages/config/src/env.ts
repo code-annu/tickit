@@ -6,6 +6,7 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z
     .string()
     .min(32, "JWT_ACCESS_SECRET must be at least 32 characters long"),
+  DATABASE_URL: z.url(),
 });
 const result = envSchema.safeParse(process.env);
 

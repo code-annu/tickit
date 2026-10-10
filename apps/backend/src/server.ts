@@ -1,4 +1,4 @@
-import { serverConfig } from "@tickit/config";
+import { serverConfig } from "@tickit/config/server";
 import app from "./app.js";
 
 app.listen(serverConfig.port, "0.0.0.0", () => {
