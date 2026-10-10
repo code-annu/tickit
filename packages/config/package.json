@@ -1,0 +1,23 @@
+{
+  "name": "@tickit/config",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsc -w",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "exports": {
+    "types": "./dist/server/index.d.ts",
+    "import": "./dist/server/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.6",
+    "zod": "^4.6.5"
+  }
+}
